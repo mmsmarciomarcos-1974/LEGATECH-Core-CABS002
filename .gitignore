@@ -1,0 +1,24 @@
+# Code::Blocks
+bin/
+obj/
+*.layout
+*.depend
+
+# Compilação C/C++
+*.o
+*.obj
+*.exe
+*.out
+
+# Dados grandes e resultados
+data/raw/
+data/output/
+*.zip
+
+# Temporários
+*.tmp
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
