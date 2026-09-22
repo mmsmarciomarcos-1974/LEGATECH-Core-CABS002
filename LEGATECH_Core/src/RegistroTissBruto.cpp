@@ -43,3 +43,4 @@ const std::string& RegistroTissBruto::getDtRealizacao() const
 {
     return dtRealizacao;
 }
+

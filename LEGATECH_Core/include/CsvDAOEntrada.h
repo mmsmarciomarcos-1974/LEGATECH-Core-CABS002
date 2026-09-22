@@ -1,6 +1,6 @@
 #ifndef CSVDAOENTRADA_H
 #define CSVDAOENTRADA_H
-
+#include "../include/ResultadoValidacao.h"
 #include <string>
 
 class CsvDAOEntrada
