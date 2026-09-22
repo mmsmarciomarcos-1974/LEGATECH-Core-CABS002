@@ -1,3 +1,4 @@
+#include "../include/RegistroTissBruto.h"
 #include "../include/CsvDAOEntrada.h"
 
 #include <fstream>
@@ -27,6 +28,52 @@ std::vector<std::string> separarCampos(const std::string& linha)
 
     return campos;
 }
+bool CsvDAOEntrada::validarCabecalho(const std::string& cabecalho)
+{
+    std::string cabecalhoLimpo = cabecalho;
+
+    // Remove o BOM UTF-8, caso exista no inicio do arquivo
+    if (cabecalhoLimpo.size() >= 3 &&
+        static_cast<unsigned char>(cabecalhoLimpo[0]) == 0xEF &&
+        static_cast<unsigned char>(cabecalhoLimpo[1]) == 0xBB &&
+        static_cast<unsigned char>(cabecalhoLimpo[2]) == 0xBF)
+    {
+        cabecalhoLimpo.erase(0, 3);
+    }
+
+    const std::vector<std::string> colunasEsperadas =
+    {
+        "ID_EVENTO_ATENCAO_SAUDE",
+        "UF_PRESTADOR",
+        "DT_REALIZACAO",
+        "CD_PROCEDIMENTO",
+        "CD_TABELA_REFERENCIA",
+        "QT_ITEM_EVENTO_INFORMADO",
+        "VL_ITEM_EVENTO_INFORMADO",
+        "VL_ITEM_PAGO_FORNECEDOR",
+        "UNIDADE_MEDIDA",
+        "IND_PACOTE",
+        "IND_TABELA_PROPRIA"
+    };
+
+    std::vector<std::string> colunasEncontradas =
+        separarCampos(cabecalhoLimpo);
+
+    if (colunasEncontradas.size() != colunasEsperadas.size())
+    {
+        return false;
+    }
+
+    for (std::size_t i = 0; i < colunasEsperadas.size(); ++i)
+    {
+        if (colunasEncontradas[i] != colunasEsperadas[i])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 CsvDAOEntrada::CsvDAOEntrada(const std::string& caminhoArquivo)
     : caminhoArquivo(caminhoArquivo)
@@ -48,6 +95,14 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
 
     // Primeira leitura: cabecalho
     std::getline(arquivo, cabecalho);
+if (!validarCabecalho(cabecalho))
+{
+    std::cout << "ERRO: cabecalho invalido ou estrutura divergente.\n";
+    arquivo.close();
+    return;
+}
+
+std::cout << "Cabecalho validado com sucesso.\n\n";
 
     // Segunda leitura: primeiro registro
     if (std::getline(arquivo, linha))
@@ -66,17 +121,33 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
 
         if (campos.size() == 11)
         {
+            RegistroTissBruto registro(
+            campos[0],
+            campos[1],
+            campos[2],
+            campos[3],
+            campos[4],
+            campos[5],
+            campos[6],
+            campos[7],
+            campos[8],
+            campos[9],
+            campos[10]
+        );
+            std::cout << "\nObjeto RegistroTissBruto criado com sucesso.\n";
+
             std::cout << "ID Evento: "
-                      << campos[0] << '\n';
+                    << registro.getIdEventoAtencaoSaude()
+                    << '\n';
 
             std::cout << "UF: "
-                      << campos[1] << '\n';
+                    << registro.getUfPrestador()
+                    << '\n';
 
             std::cout << "Data: "
-                      << campos[2] << '\n';
+                    << registro.getDtRealizacao()
+                    << '\n';
 
-            std::cout << "Procedimento: "
-                      << campos[3] << '\n';
         }
         else
         {

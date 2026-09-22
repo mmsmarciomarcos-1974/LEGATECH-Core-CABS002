@@ -12,6 +12,8 @@ public:
     CsvDAOEntrada(const std::string& caminhoArquivo);
 
     void lerPrimeiroRegistro();
+
+    bool validarCabecalho(const std::string& cabecalho);
 };
 
 #endif
