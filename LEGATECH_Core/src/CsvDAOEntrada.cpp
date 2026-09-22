@@ -1,6 +1,7 @@
 #include "../include/RegistroTissBruto.h"
 #include "../include/CsvDAOEntrada.h"
 #include "../include/ResultadoValidacao.h"
+#include "../include/ValidadorRegistroTiss.h"
 
 #include <fstream>
 #include <iostream>
@@ -148,12 +149,23 @@ std::cout << "Cabecalho validado com sucesso.\n\n";
             std::cout << "Data: "
                     << registro.getDtRealizacao()
                     << '\n';
-        ResultadoValidacao resultado(EstadoValidacao::VALIDO);
+            ValidadorRegistroTiss validador;
 
-        if (resultado.getEstado() == EstadoValidacao::VALIDO)
-        {
-            std::cout << "Resultado inicial: VALIDO\n";
-        }
+            ResultadoValidacao resultado =
+                validador.validar(registro);
+
+            if (resultado.getEstado() == EstadoValidacao::VALIDO)
+            {
+                std::cout << "Resultado da validacao: VALIDO\n";
+            }
+            else if (resultado.getEstado() == EstadoValidacao::VALIDO_COM_ALERTA)
+            {
+                std::cout << "Resultado da validacao: VALIDO COM ALERTA\n";
+            }
+else
+{
+    std::cout << "Resultado da validacao: REJEITADO\n";
+}
         }
         else
         {
