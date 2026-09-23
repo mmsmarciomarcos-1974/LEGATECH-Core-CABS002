@@ -36,9 +36,13 @@
 		</Compiler>
 		<Unit filename="include/CsvDAOEntrada.h" />
 		<Unit filename="include/RegistroTissBruto.h" />
+		<Unit filename="include/ResultadoValidacao.h" />
+		<Unit filename="include/ValidadorRegistroTiss.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="src/CsvDAOEntrada.cpp" />
 		<Unit filename="src/RegistroTissBruto.cpp" />
+		<Unit filename="src/ResultadoValidacao.cpp" />
+		<Unit filename="src/ValidadorRegistroTiss.cpp" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>

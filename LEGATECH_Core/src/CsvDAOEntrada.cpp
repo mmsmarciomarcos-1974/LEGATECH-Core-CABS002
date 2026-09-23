@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <chrono>
 
 std::vector<std::string> separarCampos(const std::string& linha)
 {
@@ -174,4 +175,103 @@ else
     }
 
     arquivo.close();
+}
+
+void CsvDAOEntrada::processarArquivo()
+{
+    auto inicio = std::chrono::steady_clock::now();
+    std::ifstream arquivo(caminhoArquivo);
+
+    if (!arquivo.is_open())
+    {
+        std::cout << "ERRO: Nao foi possivel abrir o arquivo.\n";
+        return;
+    }
+
+    std::string cabecalho;
+    std::string linha;
+
+    // Le e valida o cabecalho
+    std::getline(arquivo, cabecalho);
+
+    if (!validarCabecalho(cabecalho))
+    {
+        std::cout << "ERRO: cabecalho invalido ou estrutura divergente.\n";
+        return;
+    }
+
+    std::cout << "Cabecalho validado com sucesso.\n\n";
+
+    std::size_t total = 0;
+    std::size_t validos = 0;
+    std::size_t validosComAlerta = 0;
+    std::size_t rejeitados = 0;
+    std::size_t estruturaDivergente = 0;
+
+    ValidadorRegistroTiss validador;
+
+    while (std::getline(arquivo, linha))
+    {
+        // Ignora linhas totalmente vazias
+        if (linha.empty())
+        {
+            continue;
+        }
+
+        ++total;
+
+        std::vector<std::string> campos = separarCampos(linha);
+
+        if (campos.size() != 11)
+        {
+            ++rejeitados;
+            ++estruturaDivergente;
+            continue;
+        }
+
+        RegistroTissBruto registro(
+            campos[0],
+            campos[1],
+            campos[2],
+            campos[3],
+            campos[4],
+            campos[5],
+            campos[6],
+            campos[7],
+            campos[8],
+            campos[9],
+            campos[10]
+        );
+
+        ResultadoValidacao resultado =
+            validador.validar(registro);
+
+        if (resultado.getEstado() == EstadoValidacao::VALIDO)
+        {
+            ++validos;
+        }
+        else if (resultado.getEstado() ==
+                 EstadoValidacao::VALIDO_COM_ALERTA)
+        {
+            ++validosComAlerta;
+        }
+        else
+        {
+            ++rejeitados;
+        }
+    }
+
+    auto fim = std::chrono::steady_clock::now();
+
+    std::chrono::duration<double> duracao = fim - inicio;
+
+    arquivo.close();
+
+    std::cout << "===== RESUMO DO PROCESSAMENTO =====\n";
+    std::cout << "Total processado:       " << total << '\n';
+    std::cout << "Validos:                " << validos << '\n';
+    std::cout << "Validos com alerta:     " << validosComAlerta << '\n';
+    std::cout << "Rejeitados:             " << rejeitados << '\n';
+    std::cout << "Estrutura divergente:   " << estruturaDivergente << '\n';
+    std::cout << "Tempo de processamento: " << duracao.count() << " segundos\n";
 }
