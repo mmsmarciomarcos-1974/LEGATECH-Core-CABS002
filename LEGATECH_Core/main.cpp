@@ -1,17 +1,17 @@
 #include <iostream>
-#include "include/CsvDAOEntrada.h"
+#include "include/SQLiteDAOEntrada.h"
 
 int main()
 {
     std::cout << "LEGATECH Core - CABS002\n\n";
 
+    SQLiteDAOEntrada sqlite(
+        "../data/legatech.db"
+    );
 
-    CsvDAOEntrada csv(
-    "../data/sample/PR_202501_AMB_DET_sample.csv"
-);
-
-    DAOEntrada& dao = csv;
+    DAOEntrada& dao = sqlite;
 
     dao.processarArquivo();
+
     return 0;
 }

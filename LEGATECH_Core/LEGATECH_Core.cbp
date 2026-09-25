@@ -38,12 +38,14 @@
 		<Unit filename="include/RegistroTissBruto.h" />
 		<Unit filename="include/ResultadoValidacao.h" />
 		<Unit filename="include/ResumoProcessamento.h" />
+		<Unit filename="include/SQLiteDAOEntrada.h" />
 		<Unit filename="include/ValidadorRegistroTiss.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="src/CsvDAOEntrada.cpp" />
 		<Unit filename="src/RegistroTissBruto.cpp" />
 		<Unit filename="src/ResultadoValidacao.cpp" />
 		<Unit filename="src/ResumoProcessamento.cpp" />
+		<Unit filename="src/SQLiteDAOEntrada.cpp" />
 		<Unit filename="src/ValidadorRegistroTiss.cpp" />
 		<Extensions />
 	</Project>
