@@ -1,32 +1,18 @@
 #include <iostream>
 
-#include "include/CsvDAOEntrada.h"
-#include "include/SQLiteDAOSaida.h"
-#include "include/ProcessadorTiss.h"
+#include "include/SQLiteDAOEntrada.h"
 
 int main()
 {
     std::cout << "LEGATECH Core - CABS002\n\n";
 
-    // Entrada: amostra real da ANS
-    CsvDAOEntrada csv(
-        "../data/sample/PR_202501_AMB_DET_sample.csv"
-    );
-
-    // Saida: banco SQLite recriado do zero
-    SQLiteDAOSaida sqliteSaida(
+    SQLiteDAOEntrada sqlite(
         "../data/legatech.db"
     );
 
-    // Polimorfismo de saida
-    DAOSaida& saida = sqliteSaida;
+    DAOEntrada& dao = sqlite;
 
-    // Orquestra validacao + persistencia
-    ProcessadorTiss processador(saida);
-
-    // Processamento em streaming:
-    // CSV -> RegistroTissBruto -> validacao -> SQLite
-    csv.processarArquivo(processador);
+    dao.processarArquivo();
 
     return 0;
 }
