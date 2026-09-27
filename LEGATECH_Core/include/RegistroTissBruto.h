@@ -38,6 +38,14 @@ public:
     const std::string& getIdEventoAtencaoSaude() const;
     const std::string& getUfPrestador() const;
     const std::string& getDtRealizacao() const;
+    const std::string& getCdProcedimento() const;
+    const std::string& getCdTabelaReferencia() const;
+    const std::string& getQtItemEventoInformado() const;
+    const std::string& getVlItemEventoInformado() const;
+    const std::string& getVlItemPagoFornecedor() const;
+    const std::string& getUnidadeMedida() const;
+    const std::string& getIndPacote() const;
+    const std::string& getIndTabelaPropria() const;
 };
 
 #endif

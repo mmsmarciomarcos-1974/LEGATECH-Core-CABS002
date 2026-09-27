@@ -35,10 +35,12 @@
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="include/CsvDAOEntrada.h" />
+		<Unit filename="include/DAOSaida.h" />
 		<Unit filename="include/RegistroTissBruto.h" />
 		<Unit filename="include/ResultadoValidacao.h" />
 		<Unit filename="include/ResumoProcessamento.h" />
 		<Unit filename="include/SQLiteDAOEntrada.h" />
+		<Unit filename="include/SQLiteDAOSaida.h" />
 		<Unit filename="include/ValidadorRegistroTiss.h" />
 		<Unit filename="include/sqlite3.h" />
 		<Unit filename="main.cpp" />
@@ -47,6 +49,7 @@
 		<Unit filename="src/ResultadoValidacao.cpp" />
 		<Unit filename="src/ResumoProcessamento.cpp" />
 		<Unit filename="src/SQLiteDAOEntrada.cpp" />
+		<Unit filename="src/SQLiteDAOSaida.cpp" />
 		<Unit filename="src/ValidadorRegistroTiss.cpp" />
 		<Unit filename="src/sqlite3.c">
 			<Option compilerVar="CC" />
