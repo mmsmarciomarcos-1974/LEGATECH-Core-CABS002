@@ -3,6 +3,7 @@
 #include "../include/ResultadoValidacao.h"
 #include <string>
 #include "DAOEntrada.h"
+#include "ProcessadorTiss.h"
 
 /*class CsvDAOEntrada*/
 class CsvDAOEntrada : public DAOEntrada
@@ -17,6 +18,9 @@ public:
     /*void processarArquivo();*/
     /*class CsvDAOEntrada : public DAOEntrada*/
     void processarArquivo() override;
+        void processarArquivo(
+            ProcessadorTiss& processador
+);
 
     bool validarCabecalho(const std::string& cabecalho);
 };

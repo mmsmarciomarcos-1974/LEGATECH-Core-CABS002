@@ -2,6 +2,7 @@
 #include "../include/CsvDAOEntrada.h"
 #include "../include/ResultadoValidacao.h"
 #include "../include/ValidadorRegistroTiss.h"
+#include "../include/ProcessadorTiss.h"
 
 #include <fstream>
 #include <iostream>
@@ -274,4 +275,159 @@ void CsvDAOEntrada::processarArquivo()
     std::cout << "Rejeitados:             " << rejeitados << '\n';
     std::cout << "Estrutura divergente:   " << estruturaDivergente << '\n';
     std::cout << "Tempo de processamento: " << duracao.count() << " segundos\n";
+}
+void CsvDAOEntrada::processarArquivo(
+    ProcessadorTiss& processador
+)
+{
+    auto inicio = std::chrono::steady_clock::now();
+
+    std::ifstream arquivo(caminhoArquivo);
+
+    if (!arquivo.is_open())
+    {
+        std::cout << "ERRO: Nao foi possivel abrir o arquivo.\n";
+        return;
+    }
+
+    std::string cabecalho;
+    std::string linha;
+
+    // =====================================================
+    // 1. LEITURA E VALIDACAO DO CABECALHO
+    // =====================================================
+
+    std::getline(arquivo, cabecalho);
+
+    if (!validarCabecalho(cabecalho))
+    {
+        std::cout
+            << "ERRO: cabecalho invalido ou estrutura divergente.\n";
+
+        arquivo.close();
+        return;
+    }
+
+    std::cout << "Cabecalho validado com sucesso.\n\n";
+
+
+    // =====================================================
+    // 2. CONTADORES DO PROCESSAMENTO
+    // =====================================================
+
+    std::size_t total = 0;
+    std::size_t validos = 0;
+    std::size_t validosComAlerta = 0;
+    std::size_t rejeitados = 0;
+    std::size_t estruturaDivergente = 0;
+
+
+    // =====================================================
+    // 3. PROCESSAMENTO EM STREAMING
+    // =====================================================
+
+    while (std::getline(arquivo, linha))
+    {
+        // Ignora linhas totalmente vazias
+        if (linha.empty())
+        {
+            continue;
+        }
+
+        ++total;
+
+        std::vector<std::string> campos =
+            separarCampos(linha);
+
+        // A estrutura esperada possui 11 campos
+        if (campos.size() != 11)
+        {
+            ++rejeitados;
+            ++estruturaDivergente;
+
+            continue;
+        }
+
+        RegistroTissBruto registro(
+            campos[0],
+            campos[1],
+            campos[2],
+            campos[3],
+            campos[4],
+            campos[5],
+            campos[6],
+            campos[7],
+            campos[8],
+            campos[9],
+            campos[10]
+        );
+
+
+        // =================================================
+        // 4. PROCESSADOR CENTRAL
+        // =================================================
+
+        ResultadoValidacao resultado =
+            processador.processar(registro);
+
+
+        // =================================================
+        // 5. ATUALIZACAO DOS CONTADORES
+        // =================================================
+
+        if (resultado.getEstado() ==
+            EstadoValidacao::VALIDO)
+        {
+            ++validos;
+        }
+        else if (resultado.getEstado() ==
+                 EstadoValidacao::VALIDO_COM_ALERTA)
+        {
+            ++validosComAlerta;
+        }
+        else
+        {
+            ++rejeitados;
+        }
+    }
+
+
+    // =====================================================
+    // 6. ENCERRAMENTO E RESUMO
+    // =====================================================
+
+    auto fim = std::chrono::steady_clock::now();
+
+    std::chrono::duration<double> duracao =
+        fim - inicio;
+
+    arquivo.close();
+
+    std::cout
+        << "\n===== RESUMO CSV -> SQLITE =====\n";
+
+    std::cout
+        << "Total processado:       "
+        << total << '\n';
+
+    std::cout
+        << "Validos:                "
+        << validos << '\n';
+
+    std::cout
+        << "Validos com alerta:     "
+        << validosComAlerta << '\n';
+
+    std::cout
+        << "Rejeitados:             "
+        << rejeitados << '\n';
+
+    std::cout
+        << "Estrutura divergente:   "
+        << estruturaDivergente << '\n';
+
+    std::cout
+        << "Tempo de processamento: "
+        << duracao.count()
+        << " segundos\n";
 }
