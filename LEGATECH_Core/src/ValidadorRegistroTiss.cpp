@@ -4,15 +4,27 @@ ResultadoValidacao ValidadorRegistroTiss::validar(
     const RegistroTissBruto& registro
 ) const
 {
-    // Primeira regra real de validacao:
-    // UF_PRESTADOR e obrigatoria.
+    // =====================================================
+    // REGRA 1 - UF_PRESTADOR OBRIGATORIA
+    // =====================================================
 
     if (registro.getUfPrestador().empty())
     {
-        return ResultadoValidacao(
+        ResultadoValidacao resultado(
             EstadoValidacao::REJEITADO
         );
+
+        resultado.adicionarMotivo(
+            "UF_PRESTADOR: campo obrigatorio nao informado"
+        );
+
+        return resultado;
     }
+
+
+    // =====================================================
+    // REGISTRO VALIDO ATE ESTE PONTO
+    // =====================================================
 
     return ResultadoValidacao(
         EstadoValidacao::VALIDO
