@@ -17,8 +17,8 @@ int main()
     // =====================================================
 
     const std::string caminhoCsv =
-        "../data/sample/PR_202501_AMB_DET_sample.csv";
-       //   "../data/sample/PR_201501_AMB_DET.csv";
+       // "../data/sample/PR_202501_AMB_DET_sample.csv";
+          "../data/sample/PR_201501_AMB_DET.csv";
     IdentificadorContextoTiss identificador;
 
     auto contexto =
@@ -128,6 +128,13 @@ int main()
     );
 
     csv.lerPrimeiroRegistro();
+
+    std::cout << '\n';
+
+    std::cout
+    << "\n===== PROCESSAMENTO COMPLETO DO CSV =====\n";
+
+    csv.processarArquivo();
 
     std::cout << '\n';
 
