@@ -17,8 +17,9 @@ int main()
     // =====================================================
 
     const std::string caminhoCsv =
-       // "../data/sample/PR_202501_AMB_DET_sample.csv";
-          "../data/sample/PR_201501_AMB_DET.csv";
+        "../data/sample/PR_202501_AMB_DET_sample.csv";
+       //   "../data/sample/PR_201501_AMB_DET.csv";
+       //"../data/sample/PR_202501_AMB_DET.csv";
     IdentificadorContextoTiss identificador;
 
     auto contexto =
@@ -127,7 +128,7 @@ int main()
         *contrato
     );
 
-    csv.lerPrimeiroRegistro();
+    //csv.lerPrimeiroRegistro();
 
     std::cout << '\n';
 
@@ -142,13 +143,13 @@ int main()
     // TESTE JA EXISTENTE - LEITURA SQLITE
     // =====================================================
 
-    SQLiteDAOEntrada sqlite(
-        "../data/legatech.db"
-    );
+    //SQLiteDAOEntrada sqlite(
+    //    "../data/legatech.db"
+    //);
 
-    DAOEntrada& dao = sqlite;
+    //DAOEntrada& dao = sqlite;
 
-    dao.processarArquivo();
+    //dao.processarArquivo();
 
-    return 0;
+    //return 0;
 }
