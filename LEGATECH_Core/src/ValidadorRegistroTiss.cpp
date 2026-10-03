@@ -156,7 +156,63 @@ std::string converterCompetenciaParaAnoMes(
          + "-"
          + competencia.substr(4, 2);
 }
+    bool possuiSomenteDigitos(
+        const std::string& valor
+    )
+    {
+        if (valor.empty())
+        {
+            return false;
+        }
 
+        for (char caractere : valor)
+        {
+            if (!std::isdigit(
+                    static_cast<unsigned char>(
+                        caractere
+                    )
+                ))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    bool possuiFormatoDecimalValido(
+    const std::string& valor
+)
+{
+    if (valor.empty())
+    {
+        return false;
+    }
+
+    bool separadorEncontrado = false;
+    bool digitoEncontrado = false;
+
+    for (char caractere : valor)
+    {
+        if (std::isdigit(
+                static_cast<unsigned char>(caractere)
+            ))
+        {
+            digitoEncontrado = true;
+            continue;
+        }
+
+        if ((caractere == ',' || caractere == '.') &&
+            !separadorEncontrado)
+        {
+            separadorEncontrado = true;
+            continue;
+        }
+
+        return false;
+    }
+
+    return digitoEncontrado;
+}
 }
 
 
@@ -283,11 +339,22 @@ ValidadorRegistroTiss::validar(
     // REGRA 3 - CD_PROCEDIMENTO
     // =================================================
 
-    if (registro.getCdProcedimento().empty())
+
+    const std::string& procedimento =
+        registro.getCdProcedimento();
+
+    if (procedimento.empty())
     {
         resultado.adicionarMotivo(
             "CD_PROCEDIMENTO: "
             "campo obrigatorio nao informado"
+        );
+    }
+    else if (!possuiSomenteDigitos(procedimento))
+    {
+        resultado.adicionarMotivo(
+            "CD_PROCEDIMENTO: formato invalido, "
+            "esperado codigo numerico"
         );
     }
 
@@ -296,14 +363,136 @@ ValidadorRegistroTiss::validar(
     // REGRA 4 - CD_TABELA_REFERENCIA
     // =================================================
 
-    if (registro.getCdTabelaReferencia().empty())
+    const std::string& tabelaReferencia =
+        registro.getCdTabelaReferencia();
+
+    if (tabelaReferencia.empty())
     {
         resultado.adicionarMotivo(
             "CD_TABELA_REFERENCIA: "
             "campo obrigatorio nao informado"
         );
     }
+    else if (!possuiSomenteDigitos(tabelaReferencia))
+    {
+        resultado.adicionarMotivo(
+            "CD_TABELA_REFERENCIA: formato invalido, "
+            "esperado codigo numerico"
+        );
+    }
+    // =================================================
+    // REGRA 5 - QT_ITEM_EVENTO_INFORMADO
+    // =================================================
 
+    const std::string& quantidade =
+        registro.getQtItemEventoInformado();
+
+    if (!quantidade.empty() &&
+        !possuiFormatoDecimalValido(quantidade))
+    {
+        resultado.adicionarMotivo(
+            "QT_ITEM_EVENTO_INFORMADO: "
+            "formato numerico invalido"
+        );
+    }
+
+    // =================================================
+    // REGRA 6 - VL_ITEM_EVENTO_INFORMADO
+    // =================================================
+
+    const std::string& valorItemInformado =
+        registro.getVlItemEventoInformado();
+
+    if (!valorItemInformado.empty() &&
+        !possuiFormatoDecimalValido(valorItemInformado))
+    {
+        resultado.adicionarMotivo(
+            "VL_ITEM_EVENTO_INFORMADO: "
+            "formato numerico invalido"
+        );
+    }
+
+
+    // =================================================
+    // REGRA 7 - VL_ITEM_PAGO_FORNECEDOR
+    // =================================================
+
+    const std::string& valorPagoFornecedor =
+        registro.getVlItemPagoFornecedor();
+
+    if (!valorPagoFornecedor.empty() &&
+        !possuiFormatoDecimalValido(valorPagoFornecedor))
+    {
+        resultado.adicionarMotivo(
+            "VL_ITEM_PAGO_FORNECEDOR: "
+            "formato numerico invalido"
+        );
+    }
+
+    // =================================================
+    // REGRA 8 - IND_PACOTE
+    // =================================================
+
+    const std::string& indPacote =
+        registro.getIndPacote();
+
+    if (!indPacote.empty() &&
+        indPacote != "0" &&
+        indPacote != "1")
+    {
+        resultado.adicionarMotivo(
+            "IND_PACOTE: valor invalido, esperado 0 ou 1"
+        );
+    }
+
+
+    // =================================================
+    // REGRA 9 - IND_TABELA_PROPRIA
+    // =================================================
+
+    const std::string& indTabelaPropria =
+        registro.getIndTabelaPropria();
+
+    if (!indTabelaPropria.empty() &&
+        indTabelaPropria != "0" &&
+        indTabelaPropria != "1")
+    {
+        resultado.adicionarMotivo(
+            "IND_TABELA_PROPRIA: valor invalido, esperado 0 ou 1"
+        );
+    }
+
+    // =================================================
+    // REGRA 10 - ID_EVENTO_ATENCAO_SAUDE
+    // =================================================
+
+    const std::string& idEvento =
+        registro.getIdEventoAtencaoSaude();
+
+    if (idEvento.empty())
+    {
+        resultado.adicionarMotivo(
+            "ID_EVENTO_ATENCAO_SAUDE: "
+            "campo obrigatorio nao informado"
+        );
+    }
+    else if (!possuiSomenteDigitos(idEvento))
+    {
+        resultado.adicionarMotivo(
+            "ID_EVENTO_ATENCAO_SAUDE: "
+            "formato invalido, esperado codigo numerico"
+        );
+    }// =================================================
+    // REGRA 11 - UNIDADE_MEDIDA
+    // =================================================
+    //
+    // Nesta etapa nao aplicamos obrigatoriedade,
+    // formato ou dominio.
+    //
+    // O campo aparece vazio em registros reais da massa.
+    // A regra sera incorporada posteriormente com base
+    // no Dicionario TISS correspondente ao periodo.
+    //
 
     // =================================================
     // RESULTADO FINAL
