@@ -12,10 +12,10 @@
 namespace
 {
 
-bool validarFormatoAnoMes(
-    const std::string& valor
-)
-{
+    bool validarFormatoAnoMes(
+        const std::string& valor
+    )
+    {
     // Formato esperado:
     // AAAA-MM
     //
@@ -65,10 +65,10 @@ bool validarFormatoAnoMes(
 }
 
 
-bool possuiSomenteLetras(
-    const std::string& valor
-)
-{
+    bool possuiSomenteLetras(
+        const std::string& valor
+    )
+    {
     for (char caractere : valor)
     {
         if (!std::isalpha(
@@ -85,8 +85,8 @@ bool possuiSomenteLetras(
 }
 
 
-std::string paraMaiusculo(
-    const std::string& valor
+    std::string paraMaiusculo(
+        const std::string& valor
 )
 {
     std::string resultado = valor;
@@ -106,10 +106,10 @@ std::string paraMaiusculo(
 }
 
 
-bool ufPertenceAoDominio(
-    const std::string& uf
-)
-{
+    bool ufPertenceAoDominio(
+        const std::string& uf
+    )
+    {
     static const std::unordered_set<std::string>
         ufsValidas =
     {
@@ -125,10 +125,10 @@ bool ufPertenceAoDominio(
 }
 
 
-std::string converterCompetenciaParaAnoMes(
-    const std::string& competencia
-)
-{
+    std::string converterCompetenciaParaAnoMes(
+        const std::string& competencia
+    )
+    {
     // Formato esperado:
     // AAAAMM
     //
@@ -182,7 +182,7 @@ std::string converterCompetenciaParaAnoMes(
     bool possuiFormatoDecimalValido(
     const std::string& valor
 )
-{
+    {
     if (valor.empty())
     {
         return false;
@@ -212,7 +212,31 @@ std::string converterCompetenciaParaAnoMes(
     }
 
     return digitoEncontrado;
-}
+    }
+    bool tabelaTussSuportada(
+        const std::string& tabela
+    )
+    {
+        static const std::unordered_set<std::string>
+            tabelas =
+        {
+            "19",
+            "20",
+            "22",
+            "63"
+        };
+
+        return tabelas.contains(tabela);
+    }
+
+
+    bool tabelaPacote(
+        const std::string& tabela
+    )
+    {
+        return tabela == "90" ||
+            tabela == "98";
+    }
 }
 
 
@@ -336,35 +360,26 @@ ValidadorRegistroTiss::validar(
 
 
     // =================================================
-    // REGRA 3 - CD_PROCEDIMENTO
+    // REGRA 3 E 4
+    // CD_TABELA_REFERENCIA + CD_PROCEDIMENTO
     // =================================================
-
 
     const std::string& procedimento =
         registro.getCdProcedimento();
 
-    if (procedimento.empty())
-    {
-        resultado.adicionarMotivo(
-            "CD_PROCEDIMENTO: "
-            "campo obrigatorio nao informado"
-        );
-    }
-    else if (!possuiSomenteDigitos(procedimento))
-    {
-        resultado.adicionarMotivo(
-            "CD_PROCEDIMENTO: formato invalido, "
-            "esperado codigo numerico"
-        );
-    }
-
-
-    // =================================================
-    // REGRA 4 - CD_TABELA_REFERENCIA
-    // =================================================
-
     const std::string& tabelaReferencia =
         registro.getCdTabelaReferencia();
+
+    const std::string& indPacote =
+        registro.getIndPacote();
+
+    const std::string& indTabelaPropria =
+        registro.getIndTabelaPropria();
+
+
+    // -------------------------------------------------
+    // CD_TABELA_REFERENCIA
+    // -------------------------------------------------
 
     if (tabelaReferencia.empty())
     {
@@ -373,12 +388,109 @@ ValidadorRegistroTiss::validar(
             "campo obrigatorio nao informado"
         );
     }
-    else if (!possuiSomenteDigitos(tabelaReferencia))
+    else if (!possuiSomenteDigitos(
+                tabelaReferencia
+            ))
     {
         resultado.adicionarMotivo(
-            "CD_TABELA_REFERENCIA: formato invalido, "
-            "esperado codigo numerico"
+            "CD_TABELA_REFERENCIA: "
+            "formato invalido"
         );
+    }
+    else
+    {
+        // =============================================
+        // TABELA PROPRIA
+        // =============================================
+        //
+        // Na massa real 2025:
+        //
+        // CD_TABELA_REFERENCIA = 00
+        // IND_TABELA_PROPRIA   = 1
+        //
+        if (tabelaReferencia == "00")
+        {
+            if (indTabelaPropria != "1")
+            {
+                resultado.adicionarMotivo(
+                    "CD_TABELA_REFERENCIA: "
+                    "referencia 00 incompatível com "
+                    "IND_TABELA_PROPRIA"
+                );
+            }
+        }
+
+        // =============================================
+        // PACOTES DA OPERADORA
+        // =============================================
+
+        else if (tabelaPacote(
+                    tabelaReferencia
+                ))
+        {
+            if (indPacote != "1")
+            {
+                resultado.adicionarMotivo(
+                    "CD_TABELA_REFERENCIA: "
+                    "referencia de pacote incompatível "
+                    "com IND_PACOTE"
+                );
+            }
+        }
+
+        // =============================================
+        // TUSS
+        // =============================================
+
+        else if (!tabelaTussSuportada(
+                    tabelaReferencia
+                ))
+        {
+            resultado.adicionarMotivo(
+                "CD_TABELA_REFERENCIA: "
+                "codigo fora do dominio suportado "
+                "para AMB_DET"
+            );
+        }
+    }
+
+
+    // -------------------------------------------------
+    // CD_PROCEDIMENTO
+    // -------------------------------------------------
+
+    if (procedimento.empty())
+    {
+        resultado.adicionarMotivo(
+            "CD_PROCEDIMENTO: "
+            "campo obrigatorio nao informado"
+        );
+    }
+    else
+    {
+        // Para tabelas TUSS conhecidas,
+        // o codigo observado deve possuir
+        // formato numerico.
+        //
+        // A existencia real do codigo na TUSS
+        // sera validada na proxima etapa.
+
+        if (tabelaTussSuportada(
+                tabelaReferencia
+            ) &&
+            !possuiSomenteDigitos(
+                procedimento
+            ))
+        {
+            resultado.adicionarMotivo(
+                "CD_PROCEDIMENTO: "
+                "formato invalido para tabela TUSS"
+            );
+        }
+
+        // Para tabela propria (00) e pacotes
+        // 90/98 nao forçamos codigo numerico,
+        // pois sao codigos definidos pela operadora.
     }
     // =================================================
     // REGRA 5 - QT_ITEM_EVENTO_INFORMADO
@@ -433,9 +545,6 @@ ValidadorRegistroTiss::validar(
     // REGRA 8 - IND_PACOTE
     // =================================================
 
-    const std::string& indPacote =
-        registro.getIndPacote();
-
     if (!indPacote.empty() &&
         indPacote != "0" &&
         indPacote != "1")
@@ -449,9 +558,6 @@ ValidadorRegistroTiss::validar(
     // =================================================
     // REGRA 9 - IND_TABELA_PROPRIA
     // =================================================
-
-    const std::string& indTabelaPropria =
-        registro.getIndTabelaPropria();
 
     if (!indTabelaPropria.empty() &&
         indTabelaPropria != "0" &&
