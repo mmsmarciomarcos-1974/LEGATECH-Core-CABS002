@@ -110,13 +110,12 @@ CsvDAOEntrada::normalizarCampos(
     const std::vector<std::string> camposEsperados =
         contrato.getCamposEsperados();
 
-
     // =================================================
     // A PARTIR DE 2023
     // =================================================
     //
-    // O layout fisico ja possui 11 campos,
-    // incluindo UNIDADE_MEDIDA.
+    // Layout fisico com 11 campos.
+    // Ja possui UNIDADE_MEDIDA.
     //
     if (camposEsperados.size() == 11 &&
         campos.size() == 11)
@@ -124,17 +123,15 @@ CsvDAOEntrada::normalizarCampos(
         return campos;
     }
 
-
     // =================================================
     // ATE 2022
     // =================================================
     //
-    // O layout fisico possui 10 campos.
+    // Layout fisico com 10 campos.
+    // Nao possui UNIDADE_MEDIDA.
     //
-    // Nao existe UNIDADE_MEDIDA.
-    //
-    // O LEGATECH transforma o registro para a
-    // representacao interna comum de 11 campos.
+    // O LEGATECH converte para a representacao
+    // interna comum de 11 campos.
     //
     if (camposEsperados.size() == 10 &&
         campos.size() == 10)
@@ -143,7 +140,7 @@ CsvDAOEntrada::normalizarCampos(
 
         normalizados.reserve(11);
 
-        // Campos 0 ate 7 permanecem iguais.
+        // Campos 0 a 7 permanecem iguais.
         for (std::size_t i = 0; i < 8; ++i)
         {
             normalizados.push_back(
@@ -151,8 +148,8 @@ CsvDAOEntrada::normalizarCampos(
             );
         }
 
-        // Posicao interna da UNIDADE_MEDIDA.
         // Campo inexistente no layout historico.
+        // Posicao interna: UNIDADE_MEDIDA.
         normalizados.push_back("");
 
         // IND_PACOTE
@@ -167,7 +164,6 @@ CsvDAOEntrada::normalizarCampos(
 
         return normalizados;
     }
-
 
     // Estrutura fisica incompatível com o contrato.
     return {};
@@ -305,7 +301,7 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
 
 
     // =================================================
-    // 4. OBJETO INTERNO
+    // 4. CRIACAO DO OBJETO INTERNO
     // =================================================
 
     RegistroTissBruto registro(
@@ -353,6 +349,11 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
             registro
         );
 
+
+    // =================================================
+    // 6. RESULTADO DO PRIMEIRO REGISTRO
+    // =================================================
+
     if (resultado.getEstado() ==
         EstadoValidacao::VALIDO)
     {
@@ -365,11 +366,40 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
         std::cout
             << "Resultado da validacao: "
             << "VALIDO COM ALERTA\n";
+
+        for (const std::string& alerta :
+             resultado.getAlertas())
+        {
+            std::cout
+                << "  ALERTA: "
+                << alerta
+                << '\n';
+        }
     }
     else
     {
         std::cout
             << "Resultado da validacao: REJEITADO\n";
+
+        for (const std::string& motivo :
+             resultado.getMotivos())
+        {
+            std::cout
+                << "  MOTIVO: "
+                << motivo
+                << '\n';
+        }
+
+        // Um registro rejeitado também pode possuir
+        // alertas acumulados.
+        for (const std::string& alerta :
+             resultado.getAlertas())
+        {
+            std::cout
+                << "  ALERTA: "
+                << alerta
+                << '\n';
+        }
     }
 
     arquivo.close();
@@ -413,6 +443,7 @@ void CsvDAOEntrada::processarArquivo()
         std::cout
             << "ERRO: arquivo sem cabecalho.\n";
 
+        arquivo.close();
         return;
     }
 
@@ -425,6 +456,7 @@ void CsvDAOEntrada::processarArquivo()
             << "ERRO: cabecalho invalido "
             << "ou estrutura divergente.\n";
 
+        arquivo.close();
         return;
     }
 
@@ -475,6 +507,13 @@ void CsvDAOEntrada::processarArquivo()
             ++rejeitados;
             ++estruturaDivergente;
 
+            std::cout
+                << "\nRegistro fisico "
+                << total
+                << " - REJEITADO\n"
+                << "  MOTIVO: estrutura divergente "
+                << "do contrato\n";
+
             continue;
         }
 
@@ -497,6 +536,11 @@ void CsvDAOEntrada::processarArquivo()
                 registro
             );
 
+
+        // =============================================
+        // 4. CLASSIFICACAO E DETALHAMENTO
+        // =============================================
+
         if (resultado.getEstado() ==
             EstadoValidacao::VALIDO)
         {
@@ -506,16 +550,53 @@ void CsvDAOEntrada::processarArquivo()
                  EstadoValidacao::VALIDO_COM_ALERTA)
         {
             ++validosComAlerta;
+
+            std::cout
+                << "\nRegistro ID "
+                << registro.getIdEventoAtencaoSaude()
+                << " - VALIDO COM ALERTA\n";
+
+            for (const std::string& alerta :
+                 resultado.getAlertas())
+            {
+                std::cout
+                    << "  ALERTA: "
+                    << alerta
+                    << '\n';
+            }
         }
         else
         {
             ++rejeitados;
+
+            std::cout
+                << "\nRegistro ID "
+                << registro.getIdEventoAtencaoSaude()
+                << " - REJEITADO\n";
+
+            for (const std::string& motivo :
+                 resultado.getMotivos())
+            {
+                std::cout
+                    << "  MOTIVO: "
+                    << motivo
+                    << '\n';
+            }
+
+            for (const std::string& alerta :
+                 resultado.getAlertas())
+            {
+                std::cout
+                    << "  ALERTA: "
+                    << alerta
+                    << '\n';
+            }
         }
     }
 
 
     // =================================================
-    // 4. ENCERRAMENTO
+    // 5. ENCERRAMENTO
     // =================================================
 
     auto fim =
@@ -528,11 +609,11 @@ void CsvDAOEntrada::processarArquivo()
 
 
     // =================================================
-    // 5. RESUMO
+    // 6. RESUMO
     // =================================================
 
     std::cout
-        << "===== RESUMO DO PROCESSAMENTO =====\n";
+        << "\n===== RESUMO DO PROCESSAMENTO =====\n";
 
     std::cout
         << "Total processado:       "
@@ -667,6 +748,13 @@ void CsvDAOEntrada::processarArquivo(
             ++rejeitados;
             ++estruturaDivergente;
 
+            std::cout
+                << "\nRegistro fisico "
+                << total
+                << " - REJEITADO\n"
+                << "  MOTIVO: estrutura divergente "
+                << "do contrato\n";
+
             continue;
         }
 
@@ -696,7 +784,7 @@ void CsvDAOEntrada::processarArquivo(
 
 
         // =============================================
-        // 5. CONTADORES
+        // 5. CLASSIFICACAO E DETALHAMENTO
         // =============================================
 
         if (resultado.getEstado() ==
@@ -708,10 +796,47 @@ void CsvDAOEntrada::processarArquivo(
                  EstadoValidacao::VALIDO_COM_ALERTA)
         {
             ++validosComAlerta;
+
+            std::cout
+                << "\nRegistro ID "
+                << registro.getIdEventoAtencaoSaude()
+                << " - VALIDO COM ALERTA\n";
+
+            for (const std::string& alerta :
+                 resultado.getAlertas())
+            {
+                std::cout
+                    << "  ALERTA: "
+                    << alerta
+                    << '\n';
+            }
         }
         else
         {
             ++rejeitados;
+
+            std::cout
+                << "\nRegistro ID "
+                << registro.getIdEventoAtencaoSaude()
+                << " - REJEITADO\n";
+
+            for (const std::string& motivo :
+                 resultado.getMotivos())
+            {
+                std::cout
+                    << "  MOTIVO: "
+                    << motivo
+                    << '\n';
+            }
+
+            for (const std::string& alerta :
+                 resultado.getAlertas())
+            {
+                std::cout
+                    << "  ALERTA: "
+                    << alerta
+                    << '\n';
+            }
         }
     }
 

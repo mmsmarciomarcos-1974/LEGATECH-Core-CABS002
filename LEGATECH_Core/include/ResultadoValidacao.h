@@ -17,6 +17,7 @@ private:
     EstadoValidacao estado;
 
     std::vector<std::string> motivos;
+    std::vector<std::string> alertas;
 
 public:
     ResultadoValidacao(
@@ -29,9 +30,19 @@ public:
         const std::string& motivo
     );
 
-    const std::vector<std::string>& getMotivos() const;
+    void adicionarAlerta(
+        const std::string& alerta
+    );
+
+    const std::vector<std::string>&
+    getMotivos() const;
+
+    const std::vector<std::string>&
+    getAlertas() const;
 
     bool temMotivos() const;
+
+    bool temAlertas() const;
 };
 
 #endif

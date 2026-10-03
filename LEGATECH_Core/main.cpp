@@ -17,7 +17,8 @@ int main()
     // =====================================================
 
     const std::string caminhoCsv =
-        "../data/sample/PR_202501_AMB_DET_sample.csv";
+        //"../data/sample/PR_202501_AMB_DET_sample.csv";
+        "../data/sample/PR_202501_AMB_DET_sample_rejeitado_n.csv";
        //   "../data/sample/PR_201501_AMB_DET.csv";
        //"../data/sample/PR_202501_AMB_DET.csv";
     IdentificadorContextoTiss identificador;
