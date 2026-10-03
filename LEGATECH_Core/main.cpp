@@ -126,7 +126,8 @@ int main()
 
     CsvDAOEntrada csv(
         caminhoCsv,
-        *contrato
+        *contrato,
+        contexto->getCompetencia()
     );
 
     //csv.lerPrimeiroRegistro();

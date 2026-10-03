@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <string>
+#include <unordered_set>
 
 
 // =====================================================
@@ -16,7 +17,6 @@ bool validarFormatoAnoMes(
 )
 {
     // Formato esperado:
-    //
     // AAAA-MM
     //
     // Exemplo:
@@ -84,16 +84,118 @@ bool possuiSomenteLetras(
     return true;
 }
 
+
+std::string paraMaiusculo(
+    const std::string& valor
+)
+{
+    std::string resultado = valor;
+
+    for (char& caractere : resultado)
+    {
+        caractere = static_cast<char>(
+            std::toupper(
+                static_cast<unsigned char>(
+                    caractere
+                )
+            )
+        );
+    }
+
+    return resultado;
+}
+
+
+bool ufPertenceAoDominio(
+    const std::string& uf
+)
+{
+    static const std::unordered_set<std::string>
+        ufsValidas =
+    {
+        "AC", "AL", "AP", "AM", "BA", "CE", "DF",
+        "ES", "GO", "MA", "MT", "MS", "MG", "PA",
+        "PB", "PR", "PE", "PI", "RJ", "RN", "RS",
+        "RO", "RR", "SC", "SP", "SE", "TO"
+    };
+
+    return ufsValidas.contains(
+        paraMaiusculo(uf)
+    );
+}
+
+
+std::string converterCompetenciaParaAnoMes(
+    const std::string& competencia
+)
+{
+    // Formato esperado:
+    // AAAAMM
+    //
+    // Exemplo:
+    // 202501 -> 2025-01
+
+    if (competencia.size() != 6)
+    {
+        return "";
+    }
+
+    for (char caractere : competencia)
+    {
+        if (!std::isdigit(
+                static_cast<unsigned char>(
+                    caractere
+                )
+            ))
+        {
+            return "";
+        }
+    }
+
+    return competencia.substr(0, 4)
+         + "-"
+         + competencia.substr(4, 2);
+}
+
 }
 
 
 // =====================================================
-// VALIDACAO DO REGISTRO TISS
+// VALIDACAO SEM CONTEXTO DE COMPETENCIA
+// =====================================================
+//
+// Mantida para preservar compatibilidade com os
+// pontos do sistema que ainda chamam:
+//
+//     validar(registro)
+//
+// Exemplos:
+// SQLiteDAOEntrada
+// ProcessadorTiss
+//
+// Internamente, delega para a versao mais completa.
 // =====================================================
 
 ResultadoValidacao
 ValidadorRegistroTiss::validar(
     const RegistroTissBruto& registro
+) const
+{
+    return validar(
+        registro,
+        ""
+    );
+}
+
+
+// =====================================================
+// VALIDACAO COM CONTEXTO DE COMPETENCIA
+// =====================================================
+
+ResultadoValidacao
+ValidadorRegistroTiss::validar(
+    const RegistroTissBruto& registro,
+    const std::string& competenciaArquivo
 ) const
 {
     ResultadoValidacao resultado(
@@ -121,27 +223,19 @@ ValidadorRegistroTiss::validar(
             "UF_PRESTADOR: formato invalido"
         );
     }
-    else
+    else if (!ufPertenceAoDominio(uf))
     {
-        // Regra tecnica inicial da BETA:
-        // UF com duas letras minusculas ainda pode ser
-        // reconhecida, mas gera alerta de padronizacao.
-        //
-        // Ainda nao estamos afirmando que esta seja
-        // uma regra oficial de dominio TISS.
-
-        if (!std::isupper(
-                static_cast<unsigned char>(uf[0])
-            ) ||
-            !std::isupper(
-                static_cast<unsigned char>(uf[1])
-            ))
-        {
-            resultado.adicionarAlerta(
-                "UF_PRESTADOR: valor fora do padrao "
-                "de letras maiusculas"
-            );
-        }
+        resultado.adicionarMotivo(
+            "UF_PRESTADOR: valor fora do dominio "
+            "de UFs brasileiras"
+        );
+    }
+    else if (uf != paraMaiusculo(uf))
+    {
+        resultado.adicionarAlerta(
+            "UF_PRESTADOR: valor reconhecido, "
+            "mas fora do padrao de letras maiusculas"
+        );
     }
 
 
@@ -164,6 +258,24 @@ ValidadorRegistroTiss::validar(
             "DT_REALIZACAO: formato invalido, "
             "esperado AAAA-MM"
         );
+    }
+    else if (!competenciaArquivo.empty())
+    {
+        const std::string competenciaEsperada =
+            converterCompetenciaParaAnoMes(
+                competenciaArquivo
+            );
+
+        if (!competenciaEsperada.empty() &&
+            data != competenciaEsperada)
+        {
+            resultado.adicionarAlerta(
+                "DT_REALIZACAO: valor "
+                + data
+                + " difere da competencia do arquivo "
+                + competenciaEsperada
+            );
+        }
     }
 
 
@@ -196,9 +308,6 @@ ValidadorRegistroTiss::validar(
     // =================================================
     // RESULTADO FINAL
     // =================================================
-    //
-    // O estado foi atualizado automaticamente
-    // conforme motivos e alertas foram adicionados.
     //
     // Sem ocorrencias:
     //     VALIDO

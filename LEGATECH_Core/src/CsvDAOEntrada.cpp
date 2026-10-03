@@ -179,7 +179,18 @@ CsvDAOEntrada::CsvDAOEntrada(
     const ContratoTiss& contrato
 )
     : caminhoArquivo(caminhoArquivo),
-      contrato(contrato)
+      contrato(contrato),
+      competenciaArquivo("")
+{
+}
+CsvDAOEntrada::CsvDAOEntrada(
+    const std::string& caminhoArquivo,
+    const ContratoTiss& contrato,
+    const std::string& competenciaArquivo
+)
+    : caminhoArquivo(caminhoArquivo),
+      contrato(contrato),
+      competenciaArquivo(competenciaArquivo)
 {
 }
 
@@ -346,7 +357,8 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
 
     ResultadoValidacao resultado =
         validador.validar(
-            registro
+            registro,
+            competenciaArquivo
         );
 
 
@@ -533,7 +545,8 @@ void CsvDAOEntrada::processarArquivo()
 
         ResultadoValidacao resultado =
             validador.validar(
-                registro
+                registro,
+                competenciaArquivo
             );
 
 
