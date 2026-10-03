@@ -34,8 +34,13 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="include/ContextoTiss.h" />
+		<Unit filename="include/ContratoAmbDetV1.h" />
+		<Unit filename="include/ContratoTiss.h" />
 		<Unit filename="include/CsvDAOEntrada.h" />
 		<Unit filename="include/DAOSaida.h" />
+		<Unit filename="include/IdentificadorContextoTiss.h" />
+		<Unit filename="include/ProcessadorTiss.h" />
 		<Unit filename="include/RegistroTissBruto.h" />
 		<Unit filename="include/ResultadoValidacao.h" />
 		<Unit filename="include/ResumoProcessamento.h" />
@@ -44,7 +49,11 @@
 		<Unit filename="include/ValidadorRegistroTiss.h" />
 		<Unit filename="include/sqlite3.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="src/ContextoTiss.cpp" />
+		<Unit filename="src/ContratoAmbDetV1.cpp" />
 		<Unit filename="src/CsvDAOEntrada.cpp" />
+		<Unit filename="src/IdentificadorContextoTiss.cpp" />
+		<Unit filename="src/ProcessadorTiss.cpp" />
 		<Unit filename="src/RegistroTissBruto.cpp" />
 		<Unit filename="src/ResultadoValidacao.cpp" />
 		<Unit filename="src/ResumoProcessamento.cpp" />

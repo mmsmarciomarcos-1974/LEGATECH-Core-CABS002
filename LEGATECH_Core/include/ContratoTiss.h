@@ -2,6 +2,8 @@
 #define CONTRATOTISS_H
 
 #include <string>
+#include <vector>
+
 #include "ContextoTiss.h"
 
 class ContratoTiss
@@ -14,6 +16,9 @@ public:
     ) const = 0;
 
     virtual std::string getNome() const = 0;
+
+    virtual std::vector<std::string>
+    getCamposEsperados() const = 0;
 };
 
 #endif

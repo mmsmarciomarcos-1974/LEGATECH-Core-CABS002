@@ -11,6 +11,9 @@ public:
     ) const override;
 
     std::string getNome() const override;
+
+    std::vector<std::string>
+    getCamposEsperados() const override;
 };
 
 #endif
