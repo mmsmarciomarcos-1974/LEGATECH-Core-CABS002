@@ -27,10 +27,23 @@ RegistroTissBruto registro(const std::string& codigo, const std::string& tabela 
 int main(int argc, char* argv[])
 try
 {
-    exigir(argc == 2, "caminho do catalogo");
+    exigir(argc == 3, "caminhos dos catalogos 22 e 63");
     CatalogoTuss catalogo(argv[1], "202501", "22");
     exigir(catalogo.tamanho() == 5964, "carga integral");
     exigir(catalogo.consultar("19", "10101012") == nullptr, "par isolado por tabela");
+    CatalogoTuss ambos(std::vector<ReferenciaCatalogoTuss>{{argv[1], "22"}, {argv[2], "63"}}, "202501");
+    exigir(ambos.tamanho() == 5995, "carga integral das duas tabelas");
+    exigir(ambos.contemTabela("22") && ambos.contemTabela("63") && !ambos.contemTabela("19"), "tabelas carregadas");
+    exigir(ambos.getTabela() == "22,63", "referencias para auditoria");
+    ValidadorRegistroTiss comGrupos(&ambos);
+    exigir(comGrupos.validar(registro("018", "63")).getEstado() == EstadoValidacao::VALIDO, "grupo vigente com zeros");
+    exigir(comGrupos.validar(registro("004", "63")).getEstado() == EstadoValidacao::VALIDO, "segundo grupo vigente");
+    exigir(comGrupos.validar(registro("18", "63")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "nao completar zeros");
+    exigir(comGrupos.validar(registro("999", "63")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "grupo ausente no snapshot");
+    exigir(comGrupos.validar(registro("10101012", "63")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "codigo 22 nao localizado em 63");
+    exigir(comGrupos.validar(registro("018", "22")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "grupo 63 nao localizado em 22");
+    exigir(comGrupos.validar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO, "tabela 22 preservada");
+    exigir(comGrupos.validar(registro("40311511")).getEstado() == EstadoValidacao::REJEITADO, "vigencia 22 preservada");
     ValidadorRegistroTiss v(&catalogo);
     exigir(v.validar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO, "consulta vigente");
     exigir(v.validar(registro("99999999")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "ausencia no snapshot");
@@ -60,6 +73,39 @@ try
         catch (const std::exception&) { falhou = true; }
         exigir(falhou, "catalogo incorreto rejeitado");
     };
+    auto referenciasDevemFalhar = [&](const std::vector<ReferenciaCatalogoTuss>& referencias) {
+        bool falhou = false;
+        try { CatalogoTuss c(referencias, "202501"); }
+        catch (const std::exception&) { falhou = true; }
+        exigir(falhou, "conjunto incompleto/incorreto rejeitado");
+    };
+    referenciasDevemFalhar({});
+    referenciasDevemFalhar({{argv[1], "22"}, {argv[1], "22"}});
+    referenciasDevemFalhar({{argv[1], "22"}, {argv[1], "63"}});
+    referenciasDevemFalhar({{argv[1], "22"}, {arquivo.string() + ".ausente", "63"}});
+    {
+        std::ofstream out(arquivo);
+        out << cabecalho << "202501;63;018;Grupo;;2025-02-01;2025-03-15;\n";
+    }
+    CatalogoTuss fronteiras(arquivo.string(), "202501", "63");
+    ValidadorRegistroTiss gruposFronteiras(&fronteiras);
+    exigir(gruposFronteiras.validar(registro("018", "63")).getEstado() == EstadoValidacao::REJEITADO, "grupo antes da vigencia");
+    exigir(gruposFronteiras.validar(registro("018", "63", "2025-02")).getEstado() == EstadoValidacao::VALIDO, "grupo mes vigente");
+    exigir(gruposFronteiras.validar(registro("018", "63", "2025-03")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "grupo vigencia parcial");
+    exigir(gruposFronteiras.validar(registro("018", "63", "2025-04")).getEstado() == EstadoValidacao::REJEITADO, "grupo depois da vigencia");
+    for (const auto& codigo : {"18", "0018", "A18"})
+    {
+        { std::ofstream out(arquivo); out << cabecalho << "202501;63;" << codigo << ";Grupo;;2025-01-01;;\n"; }
+        referenciasDevemFalhar({{arquivo.string(), "63"}});
+    }
+    {
+        std::ofstream out(arquivo);
+        out << cabecalho << "202501;20;10101012;Colisao;;2025-02-01;;\n";
+    }
+    CatalogoTuss colisao(std::vector<ReferenciaCatalogoTuss>{{argv[1], "22"}, {arquivo.string(), "20"}}, "202501");
+    exigir(colisao.consultar("22", "10101012") && colisao.consultar("20", "10101012"), "pares da colisao carregados");
+    exigir(colisao.consultar("22", "10101012")->inicioVigencia != colisao.consultar("20", "10101012")->inicioVigencia,
+           "mesmo codigo em tabelas diferentes possui termos independentes");
     deveFalhar("");
     deveFalhar(cabecalho);
     deveFalhar(cabecalho + "202501;22;10101012;X;;2025-02-30;;\n");

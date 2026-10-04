@@ -4,6 +4,8 @@ Uso na raiz do projeto: python tools/testar_tuss.py
 Requer gcc e g++ no PATH (MinGW no Windows).
 """
 import os
+import hashlib
+import json
 from contextlib import closing
 from pathlib import Path
 import re
@@ -14,6 +16,7 @@ import sqlite3
 ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "LEGATECH_Core"
 CATALOG = ROOT / "data/reference/tuss22_202501.csv"
+GROUPS = ROOT / "data/reference/tuss63_202501.csv"
 
 
 def run(args):
@@ -48,6 +51,15 @@ def check_counts(output, expected):
         raise RuntimeError(f"Resumo divergente: {counts}; esperado {expected}")
 
 
+manifest = json.loads((ROOT / "data/reference/manifest_tuss63_202501.json").read_text(encoding="utf-8"))
+require(manifest["table"] == "63" and manifest["catalog_version"] == "202501" and manifest["records"] == 31,
+        "Identificacao do snapshot 63 divergente")
+# O manifesto identifica o CSV normalizado com LF. Checkout com core.autocrlf
+# pode usar CRLF no Windows; canoniza somente essa representacao de nova linha.
+# Nenhum codigo, termo, data ou outro byte de conteudo e normalizado.
+catalog_bytes = GROUPS.read_bytes().replace(b"\r\n", b"\n")
+require(hashlib.sha256(catalog_bytes).hexdigest() == manifest["catalog_sha256"], "Hash do catalogo 63 divergente")
+
 with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     build = Path(scratch)
     suffix = ".exe" if os.name == "nt" else ""
@@ -60,7 +72,7 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     tests = build / ("test_catalogo_tuss" + suffix)
     run(common + [CORE / "main.cpp"] + sources + [sqlite] + libraries + ["-o", app])
     run(common + [ROOT / "tests/test_catalogo_tuss.cpp"] + sources + [sqlite] + libraries + ["-o", tests])
-    print(run([tests, CATALOG]).stdout.strip())
+    print(run([tests, CATALOG, GROUPS]).stdout.strip())
     for name, expected in [("PR_202501_AMB_DET_sample.csv", [10, 7, 3, 0, 0]),
                            ("PR_202501_AMB_DET_sample_rejeitado.csv", [10, 6, 3, 1, 0])]:
         result = run([app, ROOT / "data/sample" / name, CATALOG])
@@ -164,5 +176,33 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         expect_failure([app, positive, CATALOG, destination], "Banco deve ser diferente da entrada")
         require(destination.read_bytes() == before, "Arquivo de entrada foi alterado")
     print("OK: entrada ausente, cabecalho invalido, banco inacessivel e protecao das entradas")
+    both_database = build / "auditoria_22_63.db"
+    for source, expected in [(positive, [10, 10, 0, 0, 0]), (negative, [10, 9, 0, 1, 0])]:
+        check_counts(run([app, source, CATALOG, both_database, GROUPS]).stdout, expected)
+    with closing(sqlite3.connect(both_database)) as db, db:
+        require(db.execute("SELECT tabela_catalogo,total,validos,alertas,rejeitados FROM auditoria_execucao ORDER BY id").fetchall()
+                == [("22,63", 10, 10, 0, 0), ("22,63", 10, 9, 0, 1)], "Resumo/referencias dos dois catalogos")
+        require(db.execute("SELECT COUNT(*) FROM auditoria_ocorrencia WHERE tipo='ALERTA'").fetchone()[0] == 0,
+                "Grupos da amostra ainda geraram alerta")
+        require(db.execute("SELECT DISTINCT cd_procedimento FROM auditoria_resultado WHERE cd_tabela_referencia='63' ORDER BY cd_procedimento").fetchall()
+                == [("004",), ("018",)], "Zeros dos grupos perdidos na auditoria")
+    unknown_groups = build / "PR_202501_AMB_DET_grupos.csv"
+    unknown_groups.write_text(positive.read_text(encoding="utf-8-sig").splitlines()[0] +
+        '\n1;PR;2025-01;18;63;1;100;0;;0;0\n2;PR;2025-01;999;63;1;100;0;;0;0\n'
+        '3;PR;2025-01;10101012;63;1;100;0;;0;0\n4;PR;2025-01;018;22;1;100;0;;0;0\n', encoding="utf-8")
+    check_counts(run([app, unknown_groups, CATALOG, both_database, GROUPS]).stdout, [4, 0, 4, 0, 0])
+    with closing(sqlite3.connect(both_database)) as db, db:
+        alerts = db.execute("SELECT mensagem FROM auditoria_ocorrencia o JOIN auditoria_resultado r ON r.id=o.resultado_id WHERE r.execucao_id=3").fetchall()
+        require(len(alerts) == 4 and all(row[0].startswith("CODIGO_NAO_LOCALIZADO_NO_CATALOGO") for row in alerts),
+                "Ausencia do par deve ser alerta com catalogo carregado")
+    for groups in [build / "ausente63.csv", CATALOG]:
+        expect_failure([app, positive, CATALOG, both_database, groups], "Referencia 63 ausente/incorreta")
+    before = GROUPS.read_bytes()
+    expect_failure([app, positive, CATALOG, GROUPS, GROUPS], "Banco deve ser diferente do catalogo 63")
+    require(GROUPS.read_bytes() == before, "Catalogo 63 foi alterado")
+    with closing(sqlite3.connect(both_database)) as db, db:
+        require(db.execute("SELECT COUNT(*) FROM auditoria_execucao").fetchone()[0] == 3, "Referencia invalida iniciou execucao")
+    print("OK: catalogos 22+63, pares isolados, grupos com zeros, auditoria e falha de referencia")
+
 
 print("OK: limpeza do diretorio temporario concluida")

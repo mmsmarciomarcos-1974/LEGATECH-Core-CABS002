@@ -503,7 +503,7 @@ ValidadorRegistroTiss::validar(
                 "PAR_TUSS: tabela padronizada com IND_TABELA_PROPRIA=1; "
                 "existencia TUSS nao verificada");
         }
-        else if (!catalogo || catalogo->getTabela() != tabelaReferencia)
+        else if (!catalogo || !catalogo->contemTabela(tabelaReferencia))
         {
             resultado.adicionarAlerta(
                 "CATALOGO_NAO_CARREGADO: tabela " + tabelaReferencia);

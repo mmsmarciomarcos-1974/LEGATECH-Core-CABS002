@@ -4,6 +4,7 @@
 #include <memory>
 #include <filesystem>
 #include <stdexcept>
+#include <vector>
 #include "include/CatalogoTuss.h"
 #include "include/SQLiteAuditoriaValidacao.h"
 
@@ -17,15 +18,16 @@
 int main(int argc, char* argv[])
 try
 {
-    if (argc > 4)
+    if (argc > 5)
     {
-        std::cerr << "Uso: LEGATECH_Core [arquivo.csv [catalogo.csv [auditoria.db]]]\n";
+        std::cerr << "Uso: LEGATECH_Core [arquivo.csv [catalogo22.csv [auditoria.db [catalogo63.csv]]]]\n";
         return 1;
     }
     // Carregado uma vez; falha de referencia interrompe antes de ler a massa.
-    const CatalogoTuss catalogo(
-        argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv",
-        "202501", "22");
+    std::vector<ReferenciaCatalogoTuss> referencias{
+        {argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv", "22"}};
+    if (argc > 4) referencias.push_back({argv[4], "63"});
+    const CatalogoTuss catalogo(referencias, "202501");
     std::cout << "Catalogo TUSS " << catalogo.getVersao()
               << " / tabela " << catalogo.getTabela()
               << ": " << catalogo.tamanho() << " termos\n";
@@ -148,8 +150,10 @@ try
     if (argc > 3)
     {
         const auto destino = std::filesystem::weakly_canonical(argv[3]);
-        if (destino == std::filesystem::weakly_canonical(caminhoCsv) ||
-            destino == std::filesystem::weakly_canonical(argv[2]))
+        bool coincideReferencia = false;
+        for (const auto& referencia : referencias)
+            coincideReferencia |= destino == std::filesystem::weakly_canonical(referencia.caminho);
+        if (destino == std::filesystem::weakly_canonical(caminhoCsv) || coincideReferencia)
             throw std::runtime_error("Banco de auditoria deve ser diferente do CSV e do catalogo");
         auditoria = std::make_unique<SQLiteAuditoriaValidacao>(argv[3]);
     }
