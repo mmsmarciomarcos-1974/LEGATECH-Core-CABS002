@@ -1,0 +1,14 @@
+{
+  "source_filename": "TUSS - Demais terminologias - VERSÃO 202501.xlsx",
+  "source_sha256": "2608c3a4002b815c29a8e3ecfa15e91e045a10d11d5aa998e8899738927a0978",
+  "source_url": "https://www.ans.gov.br/arquivos/extras/tiss/Padrao_TISS_Representacao_de_Conceitos_em_Saude_202501.zip",
+  "source_sheet": "Tab 63",
+  "catalog_sha256": "007954dc5546a941a4da75c8b33c50fb578d0c333d8483cc32234fe34a21574d",
+  "catalog_version": "202501",
+  "table": "63",
+  "records": 31,
+  "encoding": "UTF-8",
+  "delimiter": ";",
+  "date_format": "YYYY-MM-DD",
+  "scope": "Snapshot oficial 202501; nao comprova cobertura historica completa"
+}
