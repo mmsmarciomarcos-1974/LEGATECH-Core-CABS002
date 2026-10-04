@@ -28,7 +28,9 @@ O CSV normalizado e seu manifesto estão em `data/reference/`.
 
 SHA-256 do ZIP oficial: `e4f7ee54d0e06c6c7f5a3374fb8cd8bedd67069e6c44f1d05b03a89298f30275`.
 SHA-256 do PDF conferido: `11789c1bfbc6cf1ebc27b5ef678c2eb35047e2df0f85fd25bdb857f0c34b9df2`.
-Os hashes do XLSX e do catálogo constam no manifesto. Eles identificam arquivos
+Os hashes do XLSX e do catálogo constam no manifesto. O hash do catálogo
+identifica a representação com LF; o teste aceita também CRLF de checkout
+Windows, convertendo apenas as quebras de linha antes de calcular o hash. Eles identificam arquivos
 conferidos; não constituem assinatura digital da ANS.
 
 ## Execução no Windows

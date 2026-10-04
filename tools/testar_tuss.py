@@ -54,7 +54,11 @@ def check_counts(output, expected):
 manifest = json.loads((ROOT / "data/reference/manifest_tuss63_202501.json").read_text(encoding="utf-8"))
 require(manifest["table"] == "63" and manifest["catalog_version"] == "202501" and manifest["records"] == 31,
         "Identificacao do snapshot 63 divergente")
-require(hashlib.sha256(GROUPS.read_bytes()).hexdigest() == manifest["catalog_sha256"], "Hash do catalogo 63 divergente")
+# O manifesto identifica o CSV normalizado com LF. Checkout com core.autocrlf
+# pode usar CRLF no Windows; canoniza somente essa representacao de nova linha.
+# Nenhum codigo, termo, data ou outro byte de conteudo e normalizado.
+catalog_bytes = GROUPS.read_bytes().replace(b"\r\n", b"\n")
+require(hashlib.sha256(catalog_bytes).hexdigest() == manifest["catalog_sha256"], "Hash do catalogo 63 divergente")
 
 with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     build = Path(scratch)
