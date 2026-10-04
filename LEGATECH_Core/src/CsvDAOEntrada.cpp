@@ -10,6 +10,7 @@
 #include <sstream>
 #include <vector>
 #include <chrono>
+#include <stdexcept>
 
 
 // =====================================================
@@ -40,6 +41,8 @@ std::vector<std::string> separarCampos(
         campos.push_back(campo);
     }
 
+    // getline nao devolve o campo vazio depois do ultimo separador.
+    if (!linha.empty() && linha.back() == ';') campos.emplace_back();
     return campos;
 }
 
@@ -54,6 +57,7 @@ bool CsvDAOEntrada::validarCabecalho(
 )
 {
     std::string cabecalhoLimpo = cabecalho;
+    if (!cabecalhoLimpo.empty() && cabecalhoLimpo.back() == '\r') cabecalhoLimpo.pop_back();
 
     // Remove BOM UTF-8, caso exista no inicio do arquivo.
     if (cabecalhoLimpo.size() >= 3 &&
@@ -187,12 +191,14 @@ CsvDAOEntrada::CsvDAOEntrada(
     const std::string& caminhoArquivo,
     const ContratoTiss& contrato,
     const std::string& competenciaArquivo,
-    const CatalogoTuss* catalogo
+    const CatalogoTuss* catalogo,
+    AuditoriaValidacao* auditoria
 )
     : caminhoArquivo(caminhoArquivo),
       contrato(contrato),
       competenciaArquivo(competenciaArquivo),
-      catalogo(catalogo)
+      catalogo(catalogo),
+      auditoria(auditoria)
 {
 }
 
@@ -421,488 +427,97 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
 
 
 // =====================================================
-// PROCESSAMENTO CSV SEM PERSISTENCIA
+// FLUXO UNICO: VALIDACAO, AUDITORIA OPCIONAL E RESUMO
 // =====================================================
 
 void CsvDAOEntrada::processarArquivo()
 {
-    auto inicio =
-        std::chrono::steady_clock::now();
-
-    std::ifstream arquivo(
-        caminhoArquivo
-    );
-
-    if (!arquivo.is_open())
-    {
-        std::cout
-            << "ERRO: Nao foi possivel abrir o arquivo.\n";
-
-        return;
-    }
-
-    std::string cabecalho;
-    std::string linha;
-
-
-    // =================================================
-    // 1. CABECALHO
-    // =================================================
-
-    if (!std::getline(
-            arquivo,
-            cabecalho
-        ))
-    {
-        std::cout
-            << "ERRO: arquivo sem cabecalho.\n";
-
-        arquivo.close();
-        return;
-    }
-
-    if (!validarCabecalho(
-            cabecalho,
-            contrato
-        ))
-    {
-        std::cout
-            << "ERRO: cabecalho invalido "
-            << "ou estrutura divergente.\n";
-
-        arquivo.close();
-        return;
-    }
-
-    std::cout
-        << "Cabecalho validado com sucesso.\n\n";
-
-
-    // =================================================
-    // 2. CONTADORES
-    // =================================================
-
-    std::size_t total = 0;
-    std::size_t validos = 0;
-    std::size_t validosComAlerta = 0;
-    std::size_t rejeitados = 0;
-    std::size_t estruturaDivergente = 0;
-
-    ValidadorRegistroTiss validador(catalogo);
-
-
-    // =================================================
-    // 3. PROCESSAMENTO EM STREAMING
-    // =================================================
-
-    while (std::getline(
-        arquivo,
-        linha
-    ))
-    {
-        if (linha.empty())
-        {
-            continue;
-        }
-
-        ++total;
-
-        const std::vector<std::string> camposRecebidos =
-            separarCampos(linha);
-
-        const std::vector<std::string> camposNormalizados =
-            normalizarCampos(
-                camposRecebidos,
-                contrato
-            );
-
-        if (camposNormalizados.empty())
-        {
-            ++rejeitados;
-            ++estruturaDivergente;
-
-            std::cout
-                << "\nRegistro fisico "
-                << total
-                << " - REJEITADO\n"
-                << "  MOTIVO: estrutura divergente "
-                << "do contrato\n";
-
-            continue;
-        }
-
-        RegistroTissBruto registro(
-            camposNormalizados[0],
-            camposNormalizados[1],
-            camposNormalizados[2],
-            camposNormalizados[3],
-            camposNormalizados[4],
-            camposNormalizados[5],
-            camposNormalizados[6],
-            camposNormalizados[7],
-            camposNormalizados[8],
-            camposNormalizados[9],
-            camposNormalizados[10]
-        );
-
-        ResultadoValidacao resultado =
-            validador.validar(
-                registro,
-                competenciaArquivo
-            );
-
-
-        // =============================================
-        // 4. CLASSIFICACAO E DETALHAMENTO
-        // =============================================
-
-        if (resultado.getEstado() ==
-            EstadoValidacao::VALIDO)
-        {
-            ++validos;
-        }
-        else if (resultado.getEstado() ==
-                 EstadoValidacao::VALIDO_COM_ALERTA)
-        {
-            ++validosComAlerta;
-
-            std::cout
-                << "\nRegistro ID "
-                << registro.getIdEventoAtencaoSaude()
-                << " - VALIDO COM ALERTA\n";
-
-            for (const std::string& alerta :
-                 resultado.getAlertas())
-            {
-                std::cout
-                    << "  ALERTA: "
-                    << alerta
-                    << '\n';
-            }
-        }
-        else
-        {
-            ++rejeitados;
-
-            std::cout
-                << "\nRegistro ID "
-                << registro.getIdEventoAtencaoSaude()
-                << " - REJEITADO\n";
-
-            for (const std::string& motivo :
-                 resultado.getMotivos())
-            {
-                std::cout
-                    << "  MOTIVO: "
-                    << motivo
-                    << '\n';
-            }
-
-            for (const std::string& alerta :
-                 resultado.getAlertas())
-            {
-                std::cout
-                    << "  ALERTA: "
-                    << alerta
-                    << '\n';
-            }
-        }
-    }
-
-
-    // =================================================
-    // 5. ENCERRAMENTO
-    // =================================================
-
-    auto fim =
-        std::chrono::steady_clock::now();
-
-    std::chrono::duration<double> duracao =
-        fim - inicio;
-
-    arquivo.close();
-
-
-    // =================================================
-    // 6. RESUMO
-    // =================================================
-
-    std::cout
-        << "\n===== RESUMO DO PROCESSAMENTO =====\n";
-
-    std::cout
-        << "Total processado:       "
-        << total
-        << '\n';
-
-    std::cout
-        << "Validos:                "
-        << validos
-        << '\n';
-
-    std::cout
-        << "Validos com alerta:     "
-        << validosComAlerta
-        << '\n';
-
-    std::cout
-        << "Rejeitados:             "
-        << rejeitados
-        << '\n';
-
-    std::cout
-        << "Estrutura divergente:   "
-        << estruturaDivergente
-        << '\n';
-
-    std::cout
-        << "Tempo de processamento: "
-        << duracao.count()
-        << " segundos\n";
+    processarArquivoImpl(nullptr);
 }
 
-
-// =====================================================
-// PROCESSAMENTO CSV COM PROCESSADOR CENTRAL / SQLITE
-// =====================================================
-
-void CsvDAOEntrada::processarArquivo(
-    ProcessadorTiss& processador
-)
+void CsvDAOEntrada::processarArquivo(ProcessadorTiss& processador)
 {
-    auto inicio =
-        std::chrono::steady_clock::now();
+    processarArquivoImpl(&processador);
+}
 
-    std::ifstream arquivo(
-        caminhoArquivo
-    );
-
+void CsvDAOEntrada::processarArquivoImpl(ProcessadorTiss* processador)
+{
+    const auto inicio = std::chrono::steady_clock::now();
+    std::ifstream arquivo(caminhoArquivo, std::ios::binary);
     if (!arquivo.is_open())
+        throw std::runtime_error("Nao foi possivel abrir o CSV: " + caminhoArquivo);
+
+    std::string cabecalho, linha;
+    if (!std::getline(arquivo, cabecalho))
+        throw std::runtime_error("CSV sem cabecalho: " + caminhoArquivo);
+    if (!validarCabecalho(cabecalho, contrato))
+        throw std::runtime_error("Cabecalho CSV invalido ou estrutura divergente do contrato");
+    std::cout << "Cabecalho validado com sucesso.\n\n";
+
+    std::size_t total = 0, validos = 0, validosComAlerta = 0;
+    std::size_t rejeitados = 0, estruturaDivergente = 0, linhaFisica = 1;
+    ValidadorRegistroTiss validador(catalogo);
+    try
     {
-        std::cout
-            << "ERRO: Nao foi possivel abrir o arquivo.\n";
-
-        return;
-    }
-
-    std::string cabecalho;
-    std::string linha;
-
-
-    // =================================================
-    // 1. CABECALHO
-    // =================================================
-
-    if (!std::getline(
-            arquivo,
-            cabecalho
-        ))
-    {
-        std::cout
-            << "ERRO: arquivo sem cabecalho.\n";
-
-        arquivo.close();
-        return;
-    }
-
-    if (!validarCabecalho(
-            cabecalho,
-            contrato
-        ))
-    {
-        std::cout
-            << "ERRO: cabecalho invalido "
-            << "ou estrutura divergente.\n";
-
-        arquivo.close();
-        return;
-    }
-
-    std::cout
-        << "Cabecalho validado com sucesso.\n\n";
-
-
-    // =================================================
-    // 2. CONTADORES
-    // =================================================
-
-    std::size_t total = 0;
-    std::size_t validos = 0;
-    std::size_t validosComAlerta = 0;
-    std::size_t rejeitados = 0;
-    std::size_t estruturaDivergente = 0;
-
-
-    // =================================================
-    // 3. PROCESSAMENTO EM STREAMING
-    // =================================================
-
-    while (std::getline(
-        arquivo,
-        linha
-    ))
-    {
-        if (linha.empty())
+        if (auditoria)
+            auditoria->iniciar({caminhoArquivo, competenciaArquivo, contrato.getNome(),
+                catalogo ? catalogo->getVersao() : "",
+                catalogo ? catalogo->getTabela() : "", cabecalho});
+        while (std::getline(arquivo, linha))
         {
-            continue;
-        }
-
-        ++total;
-
-        const std::vector<std::string> camposRecebidos =
-            separarCampos(linha);
-
-        const std::vector<std::string> camposNormalizados =
-            normalizarCampos(
-                camposRecebidos,
-                contrato
-            );
-
-        if (camposNormalizados.empty())
-        {
-            ++rejeitados;
-            ++estruturaDivergente;
-
-            std::cout
-                << "\nRegistro fisico "
-                << total
-                << " - REJEITADO\n"
-                << "  MOTIVO: estrutura divergente "
-                << "do contrato\n";
-
-            continue;
-        }
-
-        RegistroTissBruto registro(
-            camposNormalizados[0],
-            camposNormalizados[1],
-            camposNormalizados[2],
-            camposNormalizados[3],
-            camposNormalizados[4],
-            camposNormalizados[5],
-            camposNormalizados[6],
-            camposNormalizados[7],
-            camposNormalizados[8],
-            camposNormalizados[9],
-            camposNormalizados[10]
-        );
-
-
-        // =============================================
-        // 4. PROCESSADOR CENTRAL
-        // =============================================
-
-        ResultadoValidacao resultado =
-            processador.processar(
-                registro
-            );
-
-
-        // =============================================
-        // 5. CLASSIFICACAO E DETALHAMENTO
-        // =============================================
-
-        if (resultado.getEstado() ==
-            EstadoValidacao::VALIDO)
-        {
-            ++validos;
-        }
-        else if (resultado.getEstado() ==
-                 EstadoValidacao::VALIDO_COM_ALERTA)
-        {
-            ++validosComAlerta;
-
-            std::cout
-                << "\nRegistro ID "
-                << registro.getIdEventoAtencaoSaude()
-                << " - VALIDO COM ALERTA\n";
-
-            for (const std::string& alerta :
-                 resultado.getAlertas())
+            ++linhaFisica;
+            // Mantem a linha original na auditoria; CR de CRLF so sai da copia de leitura.
+            std::string linhaLeitura = linha;
+            if (!linhaLeitura.empty() && linhaLeitura.back() == '\r') linhaLeitura.pop_back();
+            if (linhaLeitura.empty()) continue;
+            ++total;
+            const auto campos = normalizarCampos(separarCampos(linhaLeitura), contrato);
+            if (campos.empty())
             {
-                std::cout
-                    << "  ALERTA: "
-                    << alerta
-                    << '\n';
+                ++rejeitados;
+                ++estruturaDivergente;
+                ResultadoValidacao resultado(EstadoValidacao::REJEITADO);
+                resultado.adicionarMotivo("ESTRUTURA_DIVERGENTE_DO_CONTRATO");
+                if (auditoria) auditoria->gravar(linhaFisica, linha, nullptr, resultado);
+                std::cout << "\nLinha fisica " << linhaFisica
+                          << " - REJEITADO\n  MOTIVO: estrutura divergente do contrato\n";
+                continue;
+            }
+            RegistroTissBruto registro(campos[0], campos[1], campos[2], campos[3], campos[4],
+                                      campos[5], campos[6], campos[7], campos[8], campos[9], campos[10]);
+            const auto resultado = processador
+                ? processador->processar(registro, competenciaArquivo)
+                : validador.validar(registro, competenciaArquivo);
+            if (auditoria) auditoria->gravar(linhaFisica, linha, &registro, resultado);
+            if (resultado.getEstado() == EstadoValidacao::VALIDO) ++validos;
+            else
+            {
+                const bool alerta = resultado.getEstado() == EstadoValidacao::VALIDO_COM_ALERTA;
+                if (alerta) ++validosComAlerta;
+                else ++rejeitados;
+                std::cout << "\nRegistro ID " << registro.getIdEventoAtencaoSaude()
+                          << (alerta ? " - VALIDO COM ALERTA\n" : " - REJEITADO\n");
+                for (const auto& motivo : resultado.getMotivos())
+                    std::cout << "  MOTIVO: " << motivo << '\n';
+                for (const auto& aviso : resultado.getAlertas())
+                    std::cout << "  ALERTA: " << aviso << '\n';
             }
         }
-        else
-        {
-            ++rejeitados;
-
-            std::cout
-                << "\nRegistro ID "
-                << registro.getIdEventoAtencaoSaude()
-                << " - REJEITADO\n";
-
-            for (const std::string& motivo :
-                 resultado.getMotivos())
-            {
-                std::cout
-                    << "  MOTIVO: "
-                    << motivo
-                    << '\n';
-            }
-
-            for (const std::string& alerta :
-                 resultado.getAlertas())
-            {
-                std::cout
-                    << "  ALERTA: "
-                    << alerta
-                    << '\n';
-            }
-        }
+        if (arquivo.bad() || (!arquivo.eof() && arquivo.fail()))
+            throw std::runtime_error("Falha durante leitura do CSV: " + caminhoArquivo);
+        if (auditoria) auditoria->finalizar();
     }
-
-
-    // =================================================
-    // 6. ENCERRAMENTO
-    // =================================================
-
-    auto fim =
-        std::chrono::steady_clock::now();
-
-    std::chrono::duration<double> duracao =
-        fim - inicio;
-
-    arquivo.close();
-
-
-    // =================================================
-    // 7. RESUMO
-    // =================================================
-
-    std::cout
-        << "\n===== RESUMO CSV -> SQLITE =====\n";
-
-    std::cout
-        << "Total processado:       "
-        << total
-        << '\n';
-
-    std::cout
-        << "Validos:                "
-        << validos
-        << '\n';
-
-    std::cout
-        << "Validos com alerta:     "
-        << validosComAlerta
-        << '\n';
-
-    std::cout
-        << "Rejeitados:             "
-        << rejeitados
-        << '\n';
-
-    std::cout
-        << "Estrutura divergente:   "
-        << estruturaDivergente
-        << '\n';
-
-    std::cout
-        << "Tempo de processamento: "
-        << duracao.count()
-        << " segundos\n";
+    catch (...)
+    {
+        if (auditoria) auditoria->cancelar();
+        throw;
+    }
+    const std::chrono::duration<double> duracao = std::chrono::steady_clock::now() - inicio;
+    std::cout << "\n===== RESUMO DO PROCESSAMENTO =====\n"
+              << "Total processado:       " << total << '\n'
+              << "Validos:                " << validos << '\n'
+              << "Validos com alerta:     " << validosComAlerta << '\n'
+              << "Rejeitados:             " << rejeitados << '\n'
+              << "Estrutura divergente:   " << estruturaDivergente << '\n'
+              << "Tempo de processamento: " << duracao.count() << " segundos\n";
 }

@@ -7,6 +7,7 @@
 #include "DAOEntrada.h"
 #include "ProcessadorTiss.h"
 #include "ContratoTiss.h"
+#include "AuditoriaValidacao.h"
 
 class CsvDAOEntrada : public DAOEntrada
 {
@@ -24,6 +25,8 @@ private:
     // como DT_REALIZACAO x competencia do arquivo.
     std::string competenciaArquivo;
     const CatalogoTuss* catalogo = nullptr;
+    AuditoriaValidacao* auditoria = nullptr;
+    void processarArquivoImpl(ProcessadorTiss* processador);
 
 public:
 
@@ -50,7 +53,8 @@ public:
         const std::string& caminhoArquivo,
         const ContratoTiss& contrato,
         const std::string& competenciaArquivo,
-        const CatalogoTuss* catalogo = nullptr
+        const CatalogoTuss* catalogo = nullptr,
+        AuditoriaValidacao* auditoria = nullptr
     );
 
 

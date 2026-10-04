@@ -5,6 +5,7 @@
 #include "SQLiteDAOEntrada.h"
 #include "SQLiteDAOSaida.h"
 #include "ProcessadorTiss.h"
+#include "SQLiteAuditoriaValidacao.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -79,6 +80,8 @@ try
     SQLiteDAOSaida saida(banco.string());
     ProcessadorTiss processador(saida, &catalogo);
     exigir(processador.processar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO, "processador recebe catalogo");
+    exigir(processador.processar(registro("10101012"), "202502").getEstado() == EstadoValidacao::VALIDO_COM_ALERTA,
+           "processador recebe competencia do arquivo");
     std::ostringstream captura;
     auto* anterior = std::cout.rdbuf(captura.rdbuf());
     SQLiteDAOEntrada entrada(banco.string(), &catalogo);
@@ -86,12 +89,45 @@ try
     std::cout.rdbuf(anterior);
     exigir(captura.str().find("Validos:                1") != std::string::npos, "SQLite recebe catalogo");
 
+    // Falha real de UNIQUE deve cancelar tudo e liberar comandos para nova execucao.
+    const auto bancoAuditoria = diretorio / "auditoria.db";
+    const ContextoAuditoria contexto{"entrada.csv", "202501", "AMB_DET", "202501", "22", "cabecalho"};
+    {
+        SQLiteAuditoriaValidacao auditoria(bancoAuditoria.string());
+        auditoria.iniciar(contexto);
+        const auto r = registro("10101012");
+        auditoria.gravar(2, "linha", &r, v.validar(r));
+        bool duplicou = false;
+        try { auditoria.gravar(2, "linha duplicada", &r, v.validar(r)); }
+        catch (const std::exception&) { duplicou = true; }
+        exigir(duplicou && auditoria.getIdExecucao() == 0, "falha cancela execucao");
+        auditoria.iniciar(contexto);
+        auditoria.gravar(2, "linha confirmada", &r, v.validar(r));
+        auditoria.finalizar();
+        auditoria.iniciar(contexto);
+        auditoria.gravar(2, "linha abandonada", &r, v.validar(r));
+        // O destrutor cancela a terceira tentativa sem afetar a confirmada.
+    }
+    sqlite3* db = nullptr;
+    exigir(sqlite3_open(bancoAuditoria.string().c_str(), &db) == SQLITE_OK, "abrir auditoria para consulta");
+    sqlite3_stmt* consulta = nullptr;
+    const int preparou = sqlite3_prepare_v2(db,
+        "SELECT (SELECT COUNT(*) FROM auditoria_execucao), COUNT(*), MIN(linha_original) FROM auditoria_resultado",
+        -1, &consulta, nullptr);
+    bool auditoriaIntegra = false;
+    if (preparou == SQLITE_OK && sqlite3_step(consulta) == SQLITE_ROW)
+        auditoriaIntegra = sqlite3_column_int(consulta, 0) == 1 && sqlite3_column_int(consulta, 1) == 1 &&
+            std::string(reinterpret_cast<const char*>(sqlite3_column_text(consulta, 2))) == "linha confirmada";
+    sqlite3_finalize(consulta);
+    sqlite3_close(db);
+    exigir(auditoriaIntegra, "rollback automatico, reuso e cancelamento no destrutor");
+
     // Normalizacao historica continua preenchendo UNIDADE_MEDIDA vazia.
     ContratoAmbDetAte2022 historico;
     CsvDAOEntrada csv("nao_aberto.csv", historico, "202201", &catalogo);
     const auto normalizado = csv.normalizarCampos({"1","PR","2022-01","10101012","22","1","100","0","0","0"}, historico);
     exigir(normalizado.size() == 11 && normalizado[8].empty(), "contrato historico preservado");
-    std::cout << "OK: catalogo, par, temporalidade, falhas de carga, SQLite e contrato historico\n";
+    std::cout << "OK: catalogo, par, temporalidade, falhas de carga, SQLite, auditoria e contrato historico\n";
 }
 catch (const std::exception& erro)
 {

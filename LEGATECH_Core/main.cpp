@@ -1,7 +1,11 @@
 #include <iostream>
 #include <string>
 #include <exception>
+#include <memory>
+#include <filesystem>
+#include <stdexcept>
 #include "include/CatalogoTuss.h"
+#include "include/SQLiteAuditoriaValidacao.h"
 
 #include "include/IdentificadorContextoTiss.h"
 #include "include/SQLiteDAOEntrada.h"
@@ -13,6 +17,11 @@
 int main(int argc, char* argv[])
 try
 {
+    if (argc > 4)
+    {
+        std::cerr << "Uso: LEGATECH_Core [arquivo.csv [catalogo.csv [auditoria.db]]]\n";
+        return 1;
+    }
     // Carregado uma vez; falha de referencia interrompe antes de ler a massa.
     const CatalogoTuss catalogo(
         argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv",
@@ -134,11 +143,22 @@ try
       std::cout
     << "===== TESTE DO CSV PELO CONTRATO =====\n";
 
+    // Terceiro argumento habilita a auditoria; sem ele, mantem o fluxo de console.
+    std::unique_ptr<SQLiteAuditoriaValidacao> auditoria;
+    if (argc > 3)
+    {
+        const auto destino = std::filesystem::weakly_canonical(argv[3]);
+        if (destino == std::filesystem::weakly_canonical(caminhoCsv) ||
+            destino == std::filesystem::weakly_canonical(argv[2]))
+            throw std::runtime_error("Banco de auditoria deve ser diferente do CSV e do catalogo");
+        auditoria = std::make_unique<SQLiteAuditoriaValidacao>(argv[3]);
+    }
     CsvDAOEntrada csv(
         caminhoCsv,
         *contrato,
         contexto->getCompetencia(),
-        &catalogo
+        &catalogo,
+        auditoria.get()
     );
 
     //csv.lerPrimeiroRegistro();
@@ -149,6 +169,9 @@ try
     << "\n===== PROCESSAMENTO COMPLETO DO CSV =====\n";
 
     csv.processarArquivo();
+    if (auditoria)
+        std::cout << "Auditoria confirmada: execucao " << auditoria->getIdExecucao()
+                  << " / banco " << argv[3] << '\n';
 
     std::cout << '\n';
 

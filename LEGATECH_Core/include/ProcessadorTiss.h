@@ -15,7 +15,8 @@ public:
     ProcessadorTiss(DAOSaida& saida, const CatalogoTuss* catalogo = nullptr);
 
     ResultadoValidacao processar(
-        const RegistroTissBruto& registro
+        const RegistroTissBruto& registro,
+        const std::string& competenciaArquivo = ""
     );
 };
 

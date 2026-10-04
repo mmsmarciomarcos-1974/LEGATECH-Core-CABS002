@@ -9,11 +9,12 @@ ProcessadorTiss::ProcessadorTiss(
 }
 
 ResultadoValidacao ProcessadorTiss::processar(
-    const RegistroTissBruto& registro
+    const RegistroTissBruto& registro,
+    const std::string& competenciaArquivo
 )
 {
     ResultadoValidacao resultado =
-        validador.validar(registro);
+        validador.validar(registro, competenciaArquivo);
 
     if (resultado.getEstado() ==
         EstadoValidacao::VALIDO)
