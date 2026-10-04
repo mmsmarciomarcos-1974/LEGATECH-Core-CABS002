@@ -186,11 +186,13 @@ CsvDAOEntrada::CsvDAOEntrada(
 CsvDAOEntrada::CsvDAOEntrada(
     const std::string& caminhoArquivo,
     const ContratoTiss& contrato,
-    const std::string& competenciaArquivo
+    const std::string& competenciaArquivo,
+    const CatalogoTuss* catalogo
 )
     : caminhoArquivo(caminhoArquivo),
       contrato(contrato),
-      competenciaArquivo(competenciaArquivo)
+      competenciaArquivo(competenciaArquivo),
+      catalogo(catalogo)
 {
 }
 
@@ -353,7 +355,7 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
     // 5. VALIDACAO
     // =================================================
 
-    ValidadorRegistroTiss validador;
+    ValidadorRegistroTiss validador(catalogo);
 
     ResultadoValidacao resultado =
         validador.validar(
@@ -486,7 +488,7 @@ void CsvDAOEntrada::processarArquivo()
     std::size_t rejeitados = 0;
     std::size_t estruturaDivergente = 0;
 
-    ValidadorRegistroTiss validador;
+    ValidadorRegistroTiss validador(catalogo);
 
 
     // =================================================

@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <exception>
+#include "include/CatalogoTuss.h"
 
 #include "include/IdentificadorContextoTiss.h"
 #include "include/SQLiteDAOEntrada.h"
@@ -8,8 +10,16 @@
 #include "include/ContratoAmbDet2023Plus.h"
 #include "include/CsvDAOEntrada.h"
 
-int main()
+int main(int argc, char* argv[])
+try
 {
+    // Carregado uma vez; falha de referencia interrompe antes de ler a massa.
+    const CatalogoTuss catalogo(
+        argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv",
+        "202501", "22");
+    std::cout << "Catalogo TUSS " << catalogo.getVersao()
+              << " / tabela " << catalogo.getTabela()
+              << ": " << catalogo.tamanho() << " termos\n";
     std::cout << "LEGATECH Core - CABS002\n\n";
 
     // =====================================================
@@ -18,7 +28,7 @@ int main()
 
     const std::string caminhoCsv =
         //"../data/sample/PR_202501_AMB_DET_sample.csv";
-        "../data/sample/PR_202501_AMB_DET_sample_rejeitado_n.csv";
+        argc > 1 ? argv[1] : "../data/sample/PR_202501_AMB_DET_sample.csv";
        //   "../data/sample/PR_201501_AMB_DET.csv";
        //"../data/sample/PR_202501_AMB_DET.csv";
     IdentificadorContextoTiss identificador;
@@ -127,7 +137,8 @@ int main()
     CsvDAOEntrada csv(
         caminhoCsv,
         *contrato,
-        contexto->getCompetencia()
+        contexto->getCompetencia(),
+        &catalogo
     );
 
     //csv.lerPrimeiroRegistro();
@@ -154,4 +165,10 @@ int main()
     //dao.processarArquivo();
 
     //return 0;
+}
+
+catch (const std::exception& erro)
+{
+    std::cerr << "Falha de configuracao/execucao: " << erro.what() << '\n';
+    return 1;
 }

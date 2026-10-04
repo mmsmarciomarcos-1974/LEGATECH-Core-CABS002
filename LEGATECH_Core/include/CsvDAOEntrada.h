@@ -23,6 +23,7 @@ private:
     // Sera utilizada para validacoes contextuais,
     // como DT_REALIZACAO x competencia do arquivo.
     std::string competenciaArquivo;
+    const CatalogoTuss* catalogo = nullptr;
 
 public:
 
@@ -48,7 +49,8 @@ public:
     CsvDAOEntrada(
         const std::string& caminhoArquivo,
         const ContratoTiss& contrato,
-        const std::string& competenciaArquivo
+        const std::string& competenciaArquivo,
+        const CatalogoTuss* catalogo = nullptr
     );
 
 

@@ -32,6 +32,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-std=c++23" />
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="include/ContextoTiss.h" />
@@ -63,6 +64,14 @@
 		<Unit filename="src/sqlite3.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="include/CatalogoTuss.h" />
+		<Unit filename="src/CatalogoTuss.cpp" />
+		<Unit filename="include/ContratoAmbDetAte2022.h" />
+		<Unit filename="src/ContratoAmbDetAte2022.cpp" />
+		<Unit filename="include/ContratoAmbDet2023Plus.h" />
+		<Unit filename="src/ContratoAmbDet2023Plus.cpp" />
+		<Unit filename="include/SeletorDicionarioTiss.h" />
+		<Unit filename="src/SeletorDicionarioTiss.cpp" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>

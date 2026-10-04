@@ -492,6 +492,67 @@ ValidadorRegistroTiss::validar(
         // 90/98 nao forçamos codigo numerico,
         // pois sao codigos definidos pela operadora.
     }
+    // Consulta externa do PAR, sem lista de procedimentos no codigo.
+    // Referencias proprias/pacotes seguem as regras acima.
+    if (tabelaTussSuportada(tabelaReferencia) &&
+        possuiSomenteDigitos(procedimento))
+    {
+        if (indTabelaPropria == "1")
+        {
+            resultado.adicionarAlerta(
+                "PAR_TUSS: tabela padronizada com IND_TABELA_PROPRIA=1; "
+                "existencia TUSS nao verificada");
+        }
+        else if (!catalogo || catalogo->getTabela() != tabelaReferencia)
+        {
+            resultado.adicionarAlerta(
+                "CATALOGO_NAO_CARREGADO: tabela " + tabelaReferencia);
+        }
+        else
+        {
+            const std::string referencia =
+                " [TUSS " + catalogo->getVersao() + ", tabela " +
+                tabelaReferencia + ", procedimento " + procedimento + "]";
+            const TermoTuss* termo =
+                catalogo->consultar(tabelaReferencia, procedimento);
+            if (!termo)
+            {
+                // Snapshot nao e prova de cobertura de todo o historico.
+                resultado.adicionarAlerta(
+                    "CODIGO_NAO_LOCALIZADO_NO_CATALOGO" + referencia);
+            }
+            else if (validarFormatoAnoMes(data) && data.substr(0, 4) != "0000")
+            {
+                using namespace std::chrono;
+                const year_month mes{
+                    year{std::stoi(data.substr(0, 4))},
+                    month{static_cast<unsigned>(std::stoi(data.substr(5, 2)))}};
+                const sys_days primeiro{mes / day{1}};
+                const sys_days ultimo{mes / last};
+                if (termo->inicioVigencia > ultimo ||
+                    (termo->fimVigencia && *termo->fimVigencia < primeiro))
+                {
+                    resultado.adicionarMotivo(
+                        "PROCEDIMENTO_FORA_DA_VIGENCIA: mes " + data + referencia);
+                }
+                else if (termo->inicioVigencia > primeiro ||
+                         (termo->fimVigencia && *termo->fimVigencia <= ultimo))
+                {
+                    // Mes sem dia nao permite decidir em uma fronteira.
+                    // Inclui fim no ultimo dia: convencao de inclusao nao presumida.
+                    resultado.adicionarAlerta(
+                        "VIGENCIA_PARCIAL_NO_MES: dia do atendimento necessario" +
+                        referencia);
+                }
+            }
+            else
+            {
+                resultado.adicionarAlerta(
+                    "VIGENCIA_NAO_VERIFICADA: periodo indisponivel" + referencia);
+            }
+        }
+    }
+
     // =================================================
     // REGRA 5 - QT_ITEM_EVENTO_INFORMADO
     // =================================================

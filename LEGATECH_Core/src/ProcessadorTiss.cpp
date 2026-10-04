@@ -1,9 +1,10 @@
 #include "../include/ProcessadorTiss.h"
 
 ProcessadorTiss::ProcessadorTiss(
-    DAOSaida& saida
+    DAOSaida& saida,
+    const CatalogoTuss* catalogo
 )
-    : saida(saida)
+    : saida(saida), validador(catalogo)
 {
 }
 

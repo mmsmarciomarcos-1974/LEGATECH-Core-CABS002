@@ -8,9 +8,10 @@
 #include <string>
 
 SQLiteDAOEntrada::SQLiteDAOEntrada(
-    const std::string& caminhoBanco
+    const std::string& caminhoBanco,
+    const CatalogoTuss* catalogo
 )
-    : caminhoBanco(caminhoBanco)
+    : caminhoBanco(caminhoBanco), catalogo(catalogo)
 {
 }
 
@@ -114,7 +115,7 @@ void SQLiteDAOEntrada::processarArquivo()
     std::size_t validosComAlerta = 0;
     std::size_t rejeitados = 0;
 
-    ValidadorRegistroTiss validador;
+    ValidadorRegistroTiss validador(catalogo);
 
 
     // =====================================================

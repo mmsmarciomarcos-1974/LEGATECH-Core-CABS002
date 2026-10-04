@@ -12,7 +12,7 @@ private:
     ValidadorRegistroTiss validador;
 
 public:
-    ProcessadorTiss(DAOSaida& saida);
+    ProcessadorTiss(DAOSaida& saida, const CatalogoTuss* catalogo = nullptr);
 
     ResultadoValidacao processar(
         const RegistroTissBruto& registro

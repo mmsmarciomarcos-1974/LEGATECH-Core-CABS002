@@ -3,12 +3,17 @@
 
 #include <string>
 
+#include "CatalogoTuss.h"
 #include "RegistroTissBruto.h"
 #include "ResultadoValidacao.h"
 
 class ValidadorRegistroTiss
 {
+    const CatalogoTuss* catalogo; // Deve sobreviver ao validador.
 public:
+    explicit ValidadorRegistroTiss(const CatalogoTuss* catalogo = nullptr)
+        : catalogo(catalogo) {}
+
     // Validacao sem contexto externo.
     ResultadoValidacao validar(
         const RegistroTissBruto& registro

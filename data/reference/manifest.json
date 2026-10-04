@@ -1,0 +1,12 @@
+{
+  "source_filename": "TUSS 22 - PROCEDIMENTOS E EVENTOS EM SAÚDE - VERSÃO 202501.csv",
+  "source_sha256": "de49271d6968f99fc10f8b34f6721b3a7e5cc2e58e178e5086c2c7cf65875231",
+  "catalog_sha256": "112a1fe0cc9adc313eea9931c894d9a252d13ad8a52a4102d15830ec80eba33c",
+  "catalog_version": "202501",
+  "table": "22",
+  "records": 5964,
+  "encoding": "UTF-8",
+  "delimiter": ";",
+  "date_format": "YYYY-MM-DD",
+  "scope": "Snapshot fornecido; não comprova cobertura histórica completa"
+}
