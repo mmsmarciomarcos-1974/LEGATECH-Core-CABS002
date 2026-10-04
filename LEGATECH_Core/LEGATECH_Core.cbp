@@ -65,6 +65,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="include/CatalogoTuss.h" />
+		<Unit filename="include/AuditoriaValidacao.h" />
+		<Unit filename="include/SQLiteAuditoriaValidacao.h" />
+		<Unit filename="src/SQLiteAuditoriaValidacao.cpp" />
 		<Unit filename="src/CatalogoTuss.cpp" />
 		<Unit filename="include/ContratoAmbDetAte2022.h" />
 		<Unit filename="src/ContratoAmbDetAte2022.cpp" />
