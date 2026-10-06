@@ -10,10 +10,12 @@ class SQLiteDAOEntrada : public DAOEntrada
 private:
     std::string caminhoBanco;
     const CatalogoTuss* catalogo;
+    std::string competenciaArquivo;
 
 public:
     SQLiteDAOEntrada(const std::string& caminhoBanco,
-                     const CatalogoTuss* catalogo = nullptr);
+                     const CatalogoTuss* catalogo = nullptr,
+                     const std::string& competenciaArquivo = "");
 
     void processarArquivo() override;
 };

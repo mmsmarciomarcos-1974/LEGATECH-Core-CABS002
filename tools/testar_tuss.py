@@ -12,6 +12,7 @@ import re
 import subprocess
 import tempfile
 import sqlite3
+import csv
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "LEGATECH_Core"
@@ -203,6 +204,50 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     with closing(sqlite3.connect(both_database)) as db, db:
         require(db.execute("SELECT COUNT(*) FROM auditoria_execucao").fetchone()[0] == 3, "Referencia invalida iniciou execucao")
     print("OK: catalogos 22+63, pares isolados, grupos com zeros, auditoria e falha de referencia")
+
+    # As duas fontes sao escolhidas pelo executavel e usam ponteiro DAOEntrada.
+    columns = ("id_evento_atencao_saude", "uf_prestador", "dt_realizacao", "cd_procedimento",
+               "cd_tabela_referencia", "qt_item_evento_informado", "vl_item_evento_informado",
+               "vl_item_pago_fornecedor", "unidade_medida", "ind_pacote", "ind_tabela_propria")
+    def create_input(path, rows):
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("CREATE TABLE registro_tiss (" + ",".join(c + " TEXT" for c in columns) + ")")
+            db.executemany("INSERT INTO registro_tiss VALUES (" + ",".join("?" for _ in columns) + ")", rows)
+
+    for source, expected22, expected_both in [
+            (positive, [10, 7, 3, 0, 0], [10, 10, 0, 0, 0]),
+            (negative, [10, 6, 3, 1, 0], [10, 9, 0, 1, 0])]:
+        with source.open(encoding="utf-8-sig", newline="") as stream:
+            records = list(csv.reader(stream, delimiter=";"))[1:]
+        relational = build / (source.stem + ".db")
+        create_input(relational, records)
+        before = relational.read_bytes()
+        for catalogs, expected in [([CATALOG], expected22), ([CATALOG, GROUPS], expected_both)]:
+            output = run([app, "--sqlite", relational, "202501"] + catalogs).stdout
+            check_counts(output, expected)
+            require("Tempo de processamento:" in output, "Tempo ausente no resumo SQLite")
+        require(relational.read_bytes() == before, "Leitura SQLite alterou a entrada")
+        if source == positive:
+            # Mes valido, mas diferente da competencia: alerta contextual nas dez linhas.
+            check_counts(run([app, "--sqlite", relational, "202502", CATALOG, GROUPS]).stdout,
+                         [10, 0, 10, 0, 0])
+    empty_input = build / "vazio.db"
+    create_input(empty_input, [])
+    check_counts(run([app, "--sqlite", empty_input, "202501", CATALOG]).stdout, [0, 0, 0, 0, 0])
+    absent_input = build / "entrada_ausente.db"
+    expect_failure([app, "--sqlite", absent_input, "202501", CATALOG], "Banco de entrada ausente")
+    require(not absent_input.exists(), "Entrada ausente foi criada indevidamente")
+    invalid_schema = build / "estrutura_invalida.db"
+    with closing(sqlite3.connect(invalid_schema)) as db, db:
+        db.execute("CREATE TABLE outra_tabela (id TEXT)")
+    expect_failure([app, "--sqlite", invalid_schema, "202501", CATALOG], "Tabela de entrada ausente")
+    with closing(sqlite3.connect(invalid_schema)) as db, db:
+        db.execute("CREATE TABLE registro_tiss (id_evento_atencao_saude TEXT)")
+    expect_failure([app, "--sqlite", invalid_schema, "202501", CATALOG], "Colunas de entrada ausentes")
+    for competence in ["2025", "202500", "202513", "000001", "2025AA"]:
+        expect_failure([app, "--sqlite", empty_input, competence, CATALOG], "Competencia invalida")
+    expect_failure([app, "--sqlite", empty_input, "202501"], "Argumentos SQLite incompletos")
+    print("OK: entrada SQLite por DAO no executavel, paridade CSV, contexto, tempo e falhas sem criar banco")
 
 
 print("OK: limpeza do diretorio temporario concluida")
