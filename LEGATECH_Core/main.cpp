@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "include/CatalogoTuss.h"
 #include "include/SQLiteAuditoriaValidacao.h"
+#include "include/SaidasValidacao.h"
 
 #include "include/IdentificadorContextoTiss.h"
 #include "include/SQLiteDAOEntrada.h"
@@ -19,11 +20,18 @@
 int main(int argc, char* argv[])
 try
 {
+    std::string pastaExportacao;
+    if (argc >= 3 && std::string(argv[argc - 2]) == "--export")
+    {
+        pastaExportacao = argv[argc - 1];
+        if (pastaExportacao.empty()) throw std::runtime_error("Pasta de exportacao vazia");
+        argc -= 2;
+    }
     // Entrada relacional normalizada: competencia explicita, sem depender do nome do banco.
     if (argc > 1 && std::string(argv[1]) == "--sqlite")
     {
         if (argc != 5 && argc != 6)
-            throw std::runtime_error("Uso: LEGATECH_Core --sqlite banco.db AAAAMM catalogo22.csv [catalogo63.csv]");
+            throw std::runtime_error("Uso: LEGATECH_Core --sqlite banco.db AAAAMM catalogo22.csv [catalogo63.csv] [--export pasta_nova]");
         const std::string competencia = argv[3];
         if (competencia.size() != 6 ||
             !std::all_of(competencia.begin(), competencia.end(), [](char c) { return c >= '0' && c <= '9'; }) ||
@@ -35,21 +43,25 @@ try
         std::cout << "LEGATECH Core - CABS002\nEntrada: SQLite / competencia " << competencia
                   << "\nCatalogo TUSS " << catalogo.getVersao() << " / tabela " << catalogo.getTabela()
                   << ": " << catalogo.tamanho() << " termos\n";
-        SQLiteDAOEntrada sqlite(argv[2], &catalogo, competencia);
+        std::unique_ptr<SaidasValidacao> saidas;
+        if (!pastaExportacao.empty()) saidas = std::make_unique<SaidasValidacao>(pastaExportacao);
+        SQLiteDAOEntrada sqlite(argv[2], &catalogo, competencia, saidas.get());
         // Ponteiro da base, objeto concreto SQLite: despacho virtual.
         DAOEntrada* entrada = &sqlite;
         entrada->processarArquivo();
+        if (saidas) std::cout << "Exportacao confirmada: " << pastaExportacao << '\n';
         return 0;
     }
     if (argc > 5)
     {
-        std::cerr << "Uso: LEGATECH_Core [arquivo.csv [catalogo22.csv [auditoria.db [catalogo63.csv]]]]\n";
+        std::cerr << "Uso: LEGATECH_Core [arquivo.csv [catalogo22.csv [auditoria.db [catalogo63.csv]]]] ou arquivo.csv catalogo22.csv [catalogo63.csv] --export pasta_nova\n";
         return 1;
     }
     // Carregado uma vez; falha de referencia interrompe antes de ler a massa.
     std::vector<ReferenciaCatalogoTuss> referencias{
         {argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv", "22"}};
-    if (argc > 4) referencias.push_back({argv[4], "63"});
+    if (!pastaExportacao.empty() && argc == 4) referencias.push_back({argv[3], "63"});
+    else if (argc > 4) referencias.push_back({argv[4], "63"});
     const CatalogoTuss catalogo(referencias, "202501");
     std::cout << "Catalogo TUSS " << catalogo.getVersao()
               << " / tabela " << catalogo.getTabela()
@@ -170,7 +182,13 @@ try
 
     // Terceiro argumento habilita a auditoria; sem ele, mantem o fluxo de console.
     std::unique_ptr<SQLiteAuditoriaValidacao> auditoria;
-    if (argc > 3)
+    std::unique_ptr<SaidasValidacao> saidas;
+    if (!pastaExportacao.empty())
+    {
+        if (argc > 4) throw std::runtime_error("Com --export use arquivo.csv catalogo22.csv [catalogo63.csv] [--export pasta_nova]");
+        saidas = std::make_unique<SaidasValidacao>(pastaExportacao);
+    }
+    if (argc > 3 && pastaExportacao.empty())
     {
         const auto destino = std::filesystem::weakly_canonical(argv[3]);
         bool coincideReferencia = false;
@@ -185,7 +203,7 @@ try
         *contrato,
         contexto->getCompetencia(),
         &catalogo,
-        auditoria.get()
+        saidas ? static_cast<AuditoriaValidacao*>(saidas.get()) : auditoria.get()
     );
 
     //csv.lerPrimeiroRegistro();
@@ -198,6 +216,7 @@ try
     // O mesmo contrato usado na entrada SQLite; ponteiro nao proprietario.
     DAOEntrada* entrada = &csv;
     entrada->processarArquivo();
+    if (saidas) std::cout << "Exportacao confirmada: " << pastaExportacao << '\n';
     if (auditoria)
         std::cout << "Auditoria confirmada: execucao " << auditoria->getIdExecucao()
                   << " / banco " << argv[3] << '\n';

@@ -16,3 +16,7 @@ A carga conjunta opcional e os comandos de validação no Windows estão em [CAT
 ## Entrada CSV e SQLite por DAO
 
 O executável aceita as duas fontes e chama `processarArquivo()` por um ponteiro de `DAOEntrada`. Comandos, formato relacional e explicação para a sabatina: [ENTRADA_DAO.md](ENTRADA_DAO.md).
+
+### Resultados CSV e SQLite por DAO
+
+Use `--export pasta_nova` para exportar classificacoes, rejeicoes e alertas nos dois formatos. Comandos, classes e limites estao em [SAIDA_DAO.md](SAIDA_DAO.md).
