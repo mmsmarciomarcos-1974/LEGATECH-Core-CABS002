@@ -250,4 +250,66 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     print("OK: entrada SQLite por DAO no executavel, paridade CSV, contexto, tempo e falhas sem criar banco")
 
 
+    # RF10: CSV e SQLite devem preservar os mesmos registros e ocorrencias.
+    def check_export(arguments, destination, expected):
+        check_counts(run([app] + arguments + ["--export", destination]).stdout, expected)
+        require(destination.is_dir(), "Exportacao nao publicada")
+        rows = []
+        for name in ["aceitos.csv", "rejeitados.csv"]:
+            with (destination / name).open(encoding="utf-8", newline="") as stream:
+                current = list(csv.DictReader(stream, delimiter=";"))
+            require(all((r["ESTADO"] == "REJEITADO") == (name == "rejeitados.csv") for r in current),
+                    "Classificacao no arquivo CSV incorreto")
+            rows.extend(current)
+        require(len(rows) == expected[0], "Quantidade CSV divergente")
+        with closing(sqlite3.connect(destination / "resultados.db")) as db:
+            require(db.execute("SELECT total,validos,alertas,rejeitados,estrutura_divergente FROM auditoria_execucao").fetchone()
+                    == tuple(expected), "Resumo SQLite exportado divergente")
+            for r in rows:
+                saved = db.execute("SELECT id,estado,linha_original,id_evento,cd_tabela_referencia,cd_procedimento "
+                                   "FROM auditoria_resultado WHERE linha_fisica=?", (int(r["LINHA_ORIGEM"]),)).fetchone()
+                require(saved is not None and saved[1:3] == (r["ESTADO"], r["LINHA_ORIGINAL"]),
+                        "Estado/linha original divergente entre CSV e SQLite")
+                require(tuple(x or "" for x in saved[3:]) ==
+                        (r["ID_EVENTO_ATENCAO_SAUDE"], r["CD_TABELA_REFERENCIA"], r["CD_PROCEDIMENTO"]),
+                        "Codigos/zeros divergentes na exportacao")
+                for label, kind in [("MOTIVOS_JSON", "MOTIVO"), ("ALERTAS_JSON", "ALERTA")]:
+                    messages = [x[0] for x in db.execute("SELECT mensagem FROM auditoria_ocorrencia "
+                        "WHERE resultado_id=? AND tipo=? ORDER BY ordem", (saved[0], kind))]
+                    require(json.loads(r[label]) == messages, "Ocorrencias perdidas ou alteradas")
+        require(set(x.name for x in destination.iterdir()) ==
+                {"aceitos.csv", "rejeitados.csv", "contexto.csv", "resultados.db"}, "Arquivos exportados inesperados")
+        return rows
+
+    for source, expected in [(positive, [10, 7, 3, 0, 0]), (negative, [10, 6, 3, 1, 0])]:
+        before = source.read_bytes()
+        check_export([source, CATALOG], build / (source.stem + "_export"), expected)
+        require(source.read_bytes() == before, "Exportacao alterou CSV original")
+    check_export([negative, CATALOG, GROUPS], build / "export_22_63", [10, 9, 0, 1, 0])
+    check_export([mixed, CATALOG], build / "export_misto", [5, 1, 2, 2, 1])
+    check_export([historical, CATALOG], build / "export_historico", [1, 1, 0, 0, 0])
+    relational = build / (negative.stem + ".db")
+    before = relational.read_bytes()
+    check_export(["--sqlite", relational, "202501", CATALOG], build / "export_sqlite", [10, 6, 3, 1, 0])
+    check_export(["--sqlite", empty_input, "202501", CATALOG], build / "export_vazio", [0, 0, 0, 0, 0])
+    require(relational.read_bytes() == before, "Exportacao alterou banco original")
+    # Texto com delimitador, aspas, quebra de linha e NUL deve fazer round-trip CSV.
+    special_input = build / "especial.db"
+    special_rows = [["id;\"\n\x00fim", "PR", "2025-01", "10101012", "22", "1", "100", "0", "", "0", "0"]]
+    create_input(special_input, special_rows)
+    check_export(["--sqlite", special_input, "202501", CATALOG], build / "export_especial", [1, 0, 0, 1, 0])
+    existing = build / "export_sqlite"
+    existing_before = {f.name: f.read_bytes() for f in existing.iterdir()}
+    expect_failure([app, positive, CATALOG, "--export", existing], "Pasta existente nao pode ser sobrescrita")
+    require({f.name: f.read_bytes() for f in existing.iterdir()} == existing_before, "Exportacao anterior foi alterada")
+    for arguments in [[missing, CATALOG], [invalid, CATALOG],
+                      ["--sqlite", invalid_schema, "202501", CATALOG]]:
+        destination = build / "export_falha"
+        expect_failure([app] + arguments + ["--export", destination], "Falha nao publica resultados")
+        require(not destination.exists(), "Resultados parciais publicados")
+        require(not list(build.glob("export_falha.tmp-*")), "Pasta temporaria nao removida")
+    expect_failure([app, positive, CATALOG, "--export", build / "pai_ausente/export"], "Pai de exportacao ausente")
+    print("OK: saidas CSV/SQLite por DAO, paridade de estados/ocorrencias, historico, zeros e protecao de resultados")
+
+
 print("OK: limpeza do diretorio temporario concluida")

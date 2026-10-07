@@ -75,6 +75,11 @@
 		<Unit filename="src/ContratoAmbDet2023Plus.cpp" />
 		<Unit filename="include/SeletorDicionarioTiss.h" />
 		<Unit filename="src/SeletorDicionarioTiss.cpp" />
+		<Unit filename="include/DAOSaidaValidacao.h" />
+		<Unit filename="include/CsvSaidaValidacao.h" />
+		<Unit filename="include/SaidasValidacao.h" />
+		<Unit filename="src/CsvSaidaValidacao.cpp" />
+		<Unit filename="src/SaidasValidacao.cpp" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>

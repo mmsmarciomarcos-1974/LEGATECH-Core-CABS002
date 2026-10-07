@@ -6,6 +6,7 @@
 #include "SQLiteDAOSaida.h"
 #include "ProcessadorTiss.h"
 #include "SQLiteAuditoriaValidacao.h"
+#include "SaidasValidacao.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -168,6 +169,26 @@ try
     sqlite3_close(db);
     exigir(auditoriaIntegra, "rollback automatico, reuso e cancelamento no destrutor");
 
+    // Falha depois de gravar CSV nao deve publicar nenhum dos dois formatos.
+    const auto exportacao = diretorio / "exportacao";
+    {
+        SaidasValidacao saidas(exportacao.string());
+        DAOSaidaValidacao* dao = &saidas;
+        dao->iniciar(contexto);
+        const auto r = registro("10101012");
+        dao->gravar(2, "linha", &r, v.validar(r));
+        bool falhou = false;
+        try { dao->gravar(2, "duplicada", &r, v.validar(r)); }
+        catch (const std::exception&) { falhou = true; }
+        exigir(falhou && !std::filesystem::exists(exportacao), "falha nao publica formatos parciais");
+        for (const auto& entrada : std::filesystem::directory_iterator(diretorio))
+            exigir(entrada.path().filename().string().find("exportacao.tmp-") != 0, "limpeza apos falha");
+        dao->iniciar(contexto);
+        dao->gravar(2, "confirmada", &r, v.validar(r));
+        dao->finalizar();
+        exigir(std::filesystem::exists(exportacao / "resultados.db") &&
+               std::filesystem::exists(exportacao / "aceitos.csv"), "reuso publica os dois formatos");
+    }
     // Normalizacao historica continua preenchendo UNIDADE_MEDIDA vazia.
     ContratoAmbDetAte2022 historico;
     CsvDAOEntrada csv("nao_aberto.csv", historico, "202201", &catalogo);
