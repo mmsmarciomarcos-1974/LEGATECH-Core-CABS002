@@ -2,237 +2,84 @@
 #include "../include/sqlite3.h"
 #include "../include/RegistroTissBruto.h"
 #include "../include/ValidadorRegistroTiss.h"
-#include "../include/ResultadoValidacao.h"
+#include "../include/ResumoProcessamento.h"
 
+#include <chrono>
 #include <iostream>
+#include <memory>
+#include <stdexcept>
 #include <string>
 
-SQLiteDAOEntrada::SQLiteDAOEntrada(
-    const std::string& caminhoBanco,
-    const CatalogoTuss* catalogo
-)
-    : caminhoBanco(caminhoBanco), catalogo(catalogo)
+SQLiteDAOEntrada::SQLiteDAOEntrada(const std::string& caminhoBanco,
+                                   const CatalogoTuss* catalogo,
+                                   const std::string& competenciaArquivo)
+    : caminhoBanco(caminhoBanco), catalogo(catalogo), competenciaArquivo(competenciaArquivo)
 {
 }
 
 void SQLiteDAOEntrada::processarArquivo()
 {
-    sqlite3* banco = nullptr;
+    const auto inicio = std::chrono::steady_clock::now();
+    // Somente leitura: banco ausente deve falhar, nunca criar uma entrada vazia.
+    sqlite3* bancoBruto = nullptr;
+    const int abertura = sqlite3_open_v2(caminhoBanco.c_str(), &bancoBruto, SQLITE_OPEN_READONLY, nullptr);
+    const auto fecharBanco = [](sqlite3* p) { if (p) sqlite3_close(p); };
+    std::unique_ptr<sqlite3, decltype(fecharBanco)> banco(bancoBruto, fecharBanco);
+    if (abertura != SQLITE_OK)
+        throw std::runtime_error("Erro ao abrir entrada SQLite: " +
+                                 std::string(banco ? sqlite3_errmsg(banco.get()) : "sem conexao"));
 
-    // =====================================================
-    // 1. ABERTURA DO BANCO
-    // =====================================================
-
-    int retorno = sqlite3_open(
-        caminhoBanco.c_str(),
-        &banco
-    );
-
-    if (retorno != SQLITE_OK)
-    {
-        std::cout << "ERRO ao abrir banco SQLite.\n";
-
-        if (banco != nullptr)
-        {
-            std::cout << "Detalhe: "
-                      << sqlite3_errmsg(banco)
-                      << '\n';
-
-            sqlite3_close(banco);
-        }
-
-        return;
-    }
-
-    std::cout << "Banco SQLite aberto com sucesso.\n";
-
-
-    // =====================================================
-    // 2. PREPARACAO DO SELECT
-    // =====================================================
-
+    // Representacao relacional comum de onze campos, ja normalizada.
     const char* sql =
-        "SELECT "
-        "id_evento_atencao_saude,"
-        "uf_prestador,"
-        "dt_realizacao,"
-        "cd_procedimento,"
-        "cd_tabela_referencia,"
-        "qt_item_evento_informado,"
-        "vl_item_evento_informado,"
-        "vl_item_pago_fornecedor,"
-        "unidade_medida,"
-        "ind_pacote,"
-        "ind_tabela_propria "
+        "SELECT id_evento_atencao_saude,uf_prestador,dt_realizacao,cd_procedimento,"
+        "cd_tabela_referencia,qt_item_evento_informado,vl_item_evento_informado,"
+        "vl_item_pago_fornecedor,unidade_medida,ind_pacote,ind_tabela_propria "
         "FROM registro_tiss;";
+    sqlite3_stmt* consultaBruta = nullptr;
+    const int preparo = sqlite3_prepare_v2(banco.get(), sql, -1, &consultaBruta, nullptr);
+    const auto finalizarConsulta = [](sqlite3_stmt* p) { if (p) sqlite3_finalize(p); };
+    std::unique_ptr<sqlite3_stmt, decltype(finalizarConsulta)> consulta(consultaBruta, finalizarConsulta);
+    if (preparo != SQLITE_OK)
+        throw std::runtime_error("Estrutura SQLite invalida para registro_tiss: " +
+                                 std::string(sqlite3_errmsg(banco.get())));
 
-    sqlite3_stmt* consulta = nullptr;
-
-    retorno = sqlite3_prepare_v2(
-        banco,
-        sql,
-        -1,
-        &consulta,
-        nullptr
-    );
-
-    // =====================================================
-    // 3. TRATAMENTO DA ESTRUTURA
-    // =====================================================
-
-    if (retorno != SQLITE_OK)
-    {
-        std::string erro = sqlite3_errmsg(banco);
-
-        if (erro.find("no such table") != std::string::npos)
-        {
-            std::cout
-                << "Tabela registro_tiss inexistente ou ainda nao carregada.\n";
-
-            std::cout
-                << "Nenhum registro para processamento.\n";
-
-            sqlite3_close(banco);
-            return;
-        }
-
-        std::cout << "ERRO ao preparar SELECT.\n";
-        std::cout << "Detalhe: "
-                  << erro
-                  << '\n';
-
-        sqlite3_close(banco);
-        return;
-    }
-
-
-    // =====================================================
-    // 4. CONTADORES E VALIDADOR
-    // =====================================================
-
-    std::size_t total = 0;
-    std::size_t validos = 0;
-    std::size_t validosComAlerta = 0;
-    std::size_t rejeitados = 0;
-
+    ResumoProcessamento resumo;
     ValidadorRegistroTiss validador(catalogo);
-
-
-    // =====================================================
-    // 5. CONVERSAO DOS CAMPOS TEXT
-    // =====================================================
-
-    auto obterTexto = [&](int coluna) -> std::string
+    const auto obterTexto = [&](int coluna) -> std::string
     {
-        const unsigned char* valor =
-            sqlite3_column_text(consulta, coluna);
-
-        if (valor == nullptr)
-        {
-            return "";
-        }
-
-        return reinterpret_cast<const char*>(valor);
+        const unsigned char* valor = sqlite3_column_text(consulta.get(), coluna);
+        if (!valor) return "";
+        return std::string(reinterpret_cast<const char*>(valor),
+                           static_cast<std::size_t>(sqlite3_column_bytes(consulta.get(), coluna)));
     };
 
-
-    // =====================================================
-    // 6. LEITURA EM STREAMING DO SQLITE
-    // =====================================================
-
-    while ((retorno = sqlite3_step(consulta)) == SQLITE_ROW)
+    int retorno;
+    while ((retorno = sqlite3_step(consulta.get())) == SQLITE_ROW)
     {
-        ++total;
-
-        RegistroTissBruto registro(
-            obterTexto(0),
-            obterTexto(1),
-            obterTexto(2),
-            obterTexto(3),
-            obterTexto(4),
-            obterTexto(5),
-            obterTexto(6),
-            obterTexto(7),
-            obterTexto(8),
-            obterTexto(9),
-            obterTexto(10)
-        );
-
-        ResultadoValidacao resultado =
-            validador.validar(registro);
-
-        if (resultado.getEstado() ==
-            EstadoValidacao::VALIDO)
+        RegistroTissBruto registro(obterTexto(0), obterTexto(1), obterTexto(2), obterTexto(3),
+                                  obterTexto(4), obterTexto(5), obterTexto(6), obterTexto(7),
+                                  obterTexto(8), obterTexto(9), obterTexto(10));
+        const auto resultado = competenciaArquivo.empty()
+            ? validador.validar(registro)
+            : validador.validar(registro, competenciaArquivo);
+        resumo.incrementarTotal();
+        switch (resultado.getEstado())
         {
-            ++validos;
-        }
-        else if (resultado.getEstado() ==
-                 EstadoValidacao::VALIDO_COM_ALERTA)
-        {
-            ++validosComAlerta;
-        }
-        else
-        {
-            ++rejeitados;
+        case EstadoValidacao::VALIDO: resumo.incrementarValidos(); break;
+        case EstadoValidacao::VALIDO_COM_ALERTA: resumo.incrementarValidosComAlerta(); break;
+        case EstadoValidacao::REJEITADO: resumo.incrementarRejeitados(); break;
         }
     }
+    // SQLITE_DONE significa fim da consulta; erro nao pode produzir resumo de sucesso.
+    if (retorno != SQLITE_DONE)
+        throw std::runtime_error("Erro durante leitura SQLite: " + std::string(sqlite3_errmsg(banco.get())));
 
-
-    // =====================================================
-    // 7. FIM DO RESULTADO / "EQUIVALENTE AO +100"
-    // =====================================================
-
-    if (retorno == SQLITE_DONE)
-    {
-        if (total == 0)
-        {
-            std::cout
-                << "Tabela registro_tiss sem registros para processamento.\n";
-        }
-    }
-    else
-    {
-        std::cout
-            << "ERRO durante leitura do SQLite.\n";
-
-        std::cout
-            << "Detalhe: "
-            << sqlite3_errmsg(banco)
-            << '\n';
-    }
-
-
-    // =====================================================
-    // 8. LIBERACAO DOS RECURSOS
-    // =====================================================
-
-    sqlite3_finalize(consulta);
-    sqlite3_close(banco);
-
-
-    // =====================================================
-    // 9. RESUMO
-    // =====================================================
-
-    std::cout
-        << "\n===== RESUMO SQLITE -> VALIDACAO =====\n";
-
-    std::cout
-        << "Total lido:             "
-        << total << '\n';
-
-    std::cout
-        << "Validos:                "
-        << validos << '\n';
-
-    std::cout
-        << "Validos com alerta:     "
-        << validosComAlerta << '\n';
-
-    std::cout
-        << "Rejeitados:             "
-        << rejeitados << '\n';
-
-    std::cout
-        << "Banco SQLite fechado com sucesso.\n";
+    const std::chrono::duration<double> duracao = std::chrono::steady_clock::now() - inicio;
+    std::cout << "\n===== RESUMO SQLITE -> VALIDACAO =====\n"
+              << "Total processado:       " << resumo.getTotal() << '\n'
+              << "Validos:                " << resumo.getValidos() << '\n'
+              << "Validos com alerta:     " << resumo.getValidosComAlerta() << '\n'
+              << "Rejeitados:             " << resumo.getRejeitados() << '\n'
+              << "Estrutura divergente:   " << resumo.getEstruturaDivergente() << '\n'
+              << "Tempo de processamento: " << duracao.count() << " segundos\n";
 }

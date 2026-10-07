@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include <vector>
+#include <algorithm>
 #include "include/CatalogoTuss.h"
 #include "include/SQLiteAuditoriaValidacao.h"
 
@@ -18,6 +19,28 @@
 int main(int argc, char* argv[])
 try
 {
+    // Entrada relacional normalizada: competencia explicita, sem depender do nome do banco.
+    if (argc > 1 && std::string(argv[1]) == "--sqlite")
+    {
+        if (argc != 5 && argc != 6)
+            throw std::runtime_error("Uso: LEGATECH_Core --sqlite banco.db AAAAMM catalogo22.csv [catalogo63.csv]");
+        const std::string competencia = argv[3];
+        if (competencia.size() != 6 ||
+            !std::all_of(competencia.begin(), competencia.end(), [](char c) { return c >= '0' && c <= '9'; }) ||
+            competencia.substr(0, 4) == "0000" || competencia.substr(4) < "01" || competencia.substr(4) > "12")
+            throw std::runtime_error("Competencia SQLite deve usar AAAAMM com ano e mes validos");
+        std::vector<ReferenciaCatalogoTuss> refs{{argv[4], "22"}};
+        if (argc == 6) refs.push_back({argv[5], "63"});
+        const CatalogoTuss catalogo(refs, "202501");
+        std::cout << "LEGATECH Core - CABS002\nEntrada: SQLite / competencia " << competencia
+                  << "\nCatalogo TUSS " << catalogo.getVersao() << " / tabela " << catalogo.getTabela()
+                  << ": " << catalogo.tamanho() << " termos\n";
+        SQLiteDAOEntrada sqlite(argv[2], &catalogo, competencia);
+        // Ponteiro da base, objeto concreto SQLite: despacho virtual.
+        DAOEntrada* entrada = &sqlite;
+        entrada->processarArquivo();
+        return 0;
+    }
     if (argc > 5)
     {
         std::cerr << "Uso: LEGATECH_Core [arquivo.csv [catalogo22.csv [auditoria.db [catalogo63.csv]]]]\n";
@@ -172,26 +195,16 @@ try
     std::cout
     << "\n===== PROCESSAMENTO COMPLETO DO CSV =====\n";
 
-    csv.processarArquivo();
+    // O mesmo contrato usado na entrada SQLite; ponteiro nao proprietario.
+    DAOEntrada* entrada = &csv;
+    entrada->processarArquivo();
     if (auditoria)
         std::cout << "Auditoria confirmada: execucao " << auditoria->getIdExecucao()
                   << " / banco " << argv[3] << '\n';
 
     std::cout << '\n';
 
-    // =====================================================
-    // TESTE JA EXISTENTE - LEITURA SQLITE
-    // =====================================================
-
-    //SQLiteDAOEntrada sqlite(
-    //    "../data/legatech.db"
-    //);
-
-    //DAOEntrada& dao = sqlite;
-
-    //dao.processarArquivo();
-
-    //return 0;
+    return 0;
 }
 
 catch (const std::exception& erro)
