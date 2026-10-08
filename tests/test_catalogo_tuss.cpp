@@ -61,6 +61,39 @@ try
     exigir(v.validar(registro("10101012", "22", "2025-99")).getEstado() == EstadoValidacao::REJEITADO, "mes invalido");
     exigir(ValidadorRegistroTiss{}.validar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "compatibilidade sem catalogo explicita limite");
 
+    // RF04: limites textuais e precisao sem conversao para ponto flutuante.
+    auto avaliarCampos = [&](const std::string& id, const std::string& quantidade,
+                             const std::string& informado, const std::string& pago,
+                             const std::string& unidade = "") {
+        return v.validar(RegistroTissBruto(id,"PR","2025-01","10101012","22",
+                                          quantidade,informado,pago,unidade,"0","0"), "202501");
+    };
+    auto temMotivo = [&](const ResultadoValidacao& r, const std::string& trecho) {
+        for (const auto& motivo : r.getMotivos()) if (motivo.find(trecho) != std::string::npos) return true;
+        return false;
+    };
+    exigir(avaliarCampos(std::string(30,'9'),"999999","9999999999999999.99","0").getEstado()
+            == EstadoValidacao::VALIDO, "limites exatos aceitos");
+    exigir(temMotivo(avaliarCampos(std::string(31,'9'),"1","100","0"),"30 digitos"), "ID acima do limite");
+    for (const auto& q : {".5","5.","1,2.3","1e3","-1","1000000","12345.67"})
+        exigir(temMotivo(avaliarCampos("1",q,"100","0"),"QT_ITEM_EVENTO_INFORMADO"), "quantidade invalida");
+    for (const auto& q : {"0","1.5","1,5","1234.56","000001"})
+        exigir(avaliarCampos("1",q,"100","0").getEstado() == EstadoValidacao::VALIDO, "quantidade dentro da precisao");
+    for (const auto& valor : {".5","5.","100.123","100,123","99999999999999999","1e3","NaN"})
+    {
+        exigir(temMotivo(avaliarCampos("1","1",valor,"0"),"VL_ITEM_EVENTO_INFORMADO"), "valor informado invalido");
+        exigir(temMotivo(avaliarCampos("1","1","100",valor),"VL_ITEM_PAGO_FORNECEDOR"), "valor pago invalido");
+    }
+    exigir(avaliarCampos("1","","","","").getEstado() == EstadoValidacao::VALIDO, "vazios preservados sem obrigatoriedade presumida");
+    exigir(avaliarCampos("1","1","000100,50","0",std::string(40,'A')).getEstado() == EstadoValidacao::VALIDO, "zeros e tamanho 40 preservados");
+    exigir(temMotivo(avaliarCampos("1","1","100","0",std::string(41,'A')),"UNIDADE_MEDIDA"), "unidade acima de 40");
+    exigir(v.validar(registro(std::string(40,'A'),"00","2025-01","0","1")).getEstado() == EstadoValidacao::VALIDO,
+            "codigo proprio tamanho 40 aceito");
+    exigir(temMotivo(v.validar(registro(std::string(41,'A'),"00","2025-01","0","1")),"CD_PROCEDIMENTO: tamanho"),
+            "codigo proprio acima de 40");
+    exigir(temMotivo(v.validar(registro("1",std::string(41,'9'))),"CD_TABELA_REFERENCIA: tamanho"), "tabela acima de 40");
+    std::cout << "OK: limites de campos, precisao decimal, fronteiras e vazios permitidos\n";
+
     const auto diretorio = std::filesystem::temp_directory_path() /
         ("legatech-tuss-test-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     std::filesystem::create_directory(diretorio);

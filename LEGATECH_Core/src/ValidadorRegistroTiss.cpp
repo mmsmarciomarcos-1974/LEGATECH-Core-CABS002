@@ -179,40 +179,46 @@ namespace
 
         return true;
     }
-    bool possuiFormatoDecimalValido(
-    const std::string& valor
-)
+    // Analise textual: preserva precisao, sem double, arredondamento ou overflow.
+    bool possuiFormatoDecimalValido(const std::string& valor)
     {
-    if (valor.empty())
-    {
-        return false;
-    }
-
-    bool separadorEncontrado = false;
-    bool digitoEncontrado = false;
-
-    for (char caractere : valor)
-    {
-        if (std::isdigit(
-                static_cast<unsigned char>(caractere)
-            ))
+        if (valor.empty()) return false;
+        bool separador = false;
+        for (std::size_t i = 0; i < valor.size(); ++i)
         {
-            digitoEncontrado = true;
-            continue;
+            const char c = valor[i];
+            if (c >= '0' && c <= '9') continue;
+            if ((c == ',' || c == '.') && !separador && i > 0 && i + 1 < valor.size())
+            { separador = true; continue; }
+            return false;
         }
-
-        if ((caractere == ',' || caractere == '.') &&
-            !separadorEncontrado)
-        {
-            separadorEncontrado = true;
-            continue;
-        }
-
-        return false;
+        return true;
     }
 
-    return digitoEncontrado;
+    bool decimalDentroDoLimite(const std::string& valor, std::size_t precisao,
+                              std::size_t escalaMaxima)
+    {
+        const auto pos = valor.find_first_of(",.");
+        const auto fimInteiro = pos == std::string::npos ? valor.size() : pos;
+        const auto fracao = pos == std::string::npos ? 0 : valor.size() - pos - 1;
+        std::size_t primeiro = 0;
+        while (primeiro < fimInteiro && valor[primeiro] == '0') ++primeiro;
+        const auto inteiros = fimInteiro - primeiro;
+        // NUMBER(18,2): ate 16 digitos inteiros e 2 fracionarios.
+        if (escalaMaxima < precisao)
+            return fracao <= escalaMaxima && inteiros <= precisao - escalaMaxima;
+        // Quantidade: seis digitos, sem presumir escala fixa no dicionario.
+        return inteiros + fracao <= precisao;
     }
+
+    std::size_t tamanhoTexto(const std::string& valor)
+    {
+        // Caracteres UTF-8, nao bytes: codigos proprios podem conter acentos.
+        std::size_t tamanho = 0;
+        for (unsigned char c : valor) if ((c & 0xc0) != 0x80) ++tamanho;
+        return tamanho;
+    }
+
     bool tabelaTussSuportada(
         const std::string& tabela
     )
@@ -414,7 +420,7 @@ ValidadorRegistroTiss::validar(
             {
                 resultado.adicionarMotivo(
                     "CD_TABELA_REFERENCIA: "
-                    "referencia 00 incompatível com "
+                    "referencia 00 incompatÃ­vel com "
                     "IND_TABELA_PROPRIA"
                 );
             }
@@ -432,7 +438,7 @@ ValidadorRegistroTiss::validar(
             {
                 resultado.adicionarMotivo(
                     "CD_TABELA_REFERENCIA: "
-                    "referencia de pacote incompatível "
+                    "referencia de pacote incompatÃ­vel "
                     "com IND_PACOTE"
                 );
             }
@@ -489,9 +495,13 @@ ValidadorRegistroTiss::validar(
         }
 
         // Para tabela propria (00) e pacotes
-        // 90/98 nao forçamos codigo numerico,
+        // 90/98 nao forÃ§amos codigo numerico,
         // pois sao codigos definidos pela operadora.
     }
+    if (tamanhoTexto(procedimento) > 40)
+        resultado.adicionarMotivo("CD_PROCEDIMENTO: tamanho excede 40 caracteres");
+    if (tamanhoTexto(tabelaReferencia) > 40)
+        resultado.adicionarMotivo("CD_TABELA_REFERENCIA: tamanho excede 40 caracteres");
     // Consulta externa do PAR, sem lista de procedimentos no codigo.
     // Referencias proprias/pacotes seguem as regras acima.
     if (tabelaTussSuportada(tabelaReferencia) &&
@@ -568,6 +578,10 @@ ValidadorRegistroTiss::validar(
             "formato numerico invalido"
         );
     }
+    else if (!quantidade.empty() && !decimalDentroDoLimite(quantidade, 6, 6))
+    {
+        resultado.adicionarMotivo("QT_ITEM_EVENTO_INFORMADO: limite de precisao excedido (6 digitos)");
+    }
 
     // =================================================
     // REGRA 6 - VL_ITEM_EVENTO_INFORMADO
@@ -583,6 +597,10 @@ ValidadorRegistroTiss::validar(
             "VL_ITEM_EVENTO_INFORMADO: "
             "formato numerico invalido"
         );
+    }
+    else if (!valorItemInformado.empty() && !decimalDentroDoLimite(valorItemInformado, 18, 2))
+    {
+        resultado.adicionarMotivo("VL_ITEM_EVENTO_INFORMADO: limite de precisao excedido (18 digitos e ate 2 casas decimais)");
     }
 
 
@@ -600,6 +618,10 @@ ValidadorRegistroTiss::validar(
             "VL_ITEM_PAGO_FORNECEDOR: "
             "formato numerico invalido"
         );
+    }
+    else if (!valorPagoFornecedor.empty() && !decimalDentroDoLimite(valorPagoFornecedor, 18, 2))
+    {
+        resultado.adicionarMotivo("VL_ITEM_PAGO_FORNECEDOR: limite de precisao excedido (18 digitos e ate 2 casas decimais)");
     }
 
     // =================================================
@@ -649,7 +671,10 @@ ValidadorRegistroTiss::validar(
             "ID_EVENTO_ATENCAO_SAUDE: "
             "formato invalido, esperado codigo numerico"
         );
-    }// =================================================
+    }
+    if (idEvento.size() > 30)
+        resultado.adicionarMotivo("ID_EVENTO_ATENCAO_SAUDE: tamanho excede 30 digitos");
+    // =================================================
     // REGRA 11 - UNIDADE_MEDIDA
     // =================================================
     //
@@ -662,6 +687,10 @@ ValidadorRegistroTiss::validar(
     //
 
     // =================================================
+    // Limite documentado; obrigatoriedade e dominio TUSS 60 seguem pendentes.
+    if (tamanhoTexto(registro.getUnidadeMedida()) > 40)
+        resultado.adicionarMotivo("UNIDADE_MEDIDA: tamanho excede 40 caracteres");
+
     // RESULTADO FINAL
     // =================================================
     //
