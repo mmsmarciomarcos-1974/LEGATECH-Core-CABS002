@@ -20,3 +20,7 @@ O executável aceita as duas fontes e chama `processarArquivo()` por um ponteiro
 ### Resultados CSV e SQLite por DAO
 
 Use `--export pasta_nova` para exportar classificacoes, rejeicoes e alertas nos dois formatos. Comandos, classes e limites estao em [SAIDA_DAO.md](SAIDA_DAO.md).
+
+### Limites e precisao dos campos (RF04)
+
+Regras implementadas, fonte consultada e pendencias: [VALIDACAO_CAMPOS.md](VALIDACAO_CAMPOS.md).

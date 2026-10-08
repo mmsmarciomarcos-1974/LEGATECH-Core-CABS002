@@ -231,6 +231,24 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
             # Mes valido, mas diferente da competencia: alerta contextual nas dez linhas.
             check_counts(run([app, "--sqlite", relational, "202502", CATALOG, GROUPS]).stdout,
                          [10, 0, 10, 0, 0])
+    # As novas regras devem produzir as mesmas rejeicoes nas duas fontes.
+    limites = build / "PR_202501_AMB_DET_limites.csv"
+    with positive.open(encoding="utf-8-sig", newline="") as stream:
+        cabecalho_limites = next(csv.reader(stream, delimiter=";"))
+    linhas_limites = [
+        ["1","PR","2025-01","10101012","22","999999","100,50","0","","0","0"],
+        ["2","PR","2025-01","10101012","22",".5","100","0","","0","0"],
+        ["3","PR","2025-01","10101012","22","1","100.123","0","","0","0"],
+        ["9"*31,"PR","2025-01","10101012","22","1","100","0","","0","0"]]
+    with limites.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream, delimiter=";", lineterminator="\n")
+        writer.writerow(cabecalho_limites)
+        writer.writerows(linhas_limites)
+    banco_limites = build / "limites.db"
+    create_input(banco_limites, linhas_limites)
+    check_counts(run([app, limites, CATALOG]).stdout, [4, 1, 0, 3, 0])
+    check_counts(run([app, "--sqlite", banco_limites, "202501", CATALOG]).stdout, [4, 1, 0, 3, 0])
+    print("OK: limites e precisao aplicados igualmente em CSV e SQLite")
     empty_input = build / "vazio.db"
     create_input(empty_input, [])
     check_counts(run([app, "--sqlite", empty_input, "202501", CATALOG]).stdout, [0, 0, 0, 0, 0])
