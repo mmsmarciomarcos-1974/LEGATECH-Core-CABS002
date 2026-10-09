@@ -299,6 +299,24 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
                 {"aceitos.csv", "rejeitados.csv", "contexto.csv", "resultados.db"}, "Arquivos exportados inesperados")
         return rows
 
+    # RF05: paridade dos motivos/alertas persistidos, alem dos totais.
+    datas = build / "PR_203801_AMB_DET_datas.csv"
+    linhas_datas = [[str(i), "PR", mes, "A1", "00", "1", "100", "0", "", "0", "1"]
+                    for i, mes in enumerate(["2038-01", "2038-02", "2037-12", "0000-01", "2038-13"], 1)]
+    with datas.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream, delimiter=";", lineterminator="\n", quoting=csv.QUOTE_ALL)
+        writer.writerow(cabecalho_limites)
+        writer.writerows(linhas_datas)
+    banco_datas = build / "datas.db"
+    create_input(banco_datas, linhas_datas)
+    resultados_datas = []
+    for tag, args in [("csv", [datas, CATALOG]), ("sqlite", ["--sqlite", banco_datas, "203801", CATALOG])]:
+        destino = build / ("datas_" + tag)
+        linhas = check_export(args, destino, [5, 0, 3, 2, 0])
+        resultados_datas.append(linhas)
+    require(resultados_datas[0] == resultados_datas[1], "Datas: resultados CSV/SQLite divergentes")
+    print("OK: datas, rejeicoes e alertas Y2K38 exportados igualmente em CSV e SQLite")
+
     for source, expected in [(positive, [10, 7, 3, 0, 0]), (negative, [10, 6, 3, 1, 0])]:
         before = source.read_bytes()
         check_export([source, CATALOG], build / (source.stem + "_export"), expected)
