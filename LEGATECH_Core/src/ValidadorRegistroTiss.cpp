@@ -56,7 +56,7 @@ namespace
             valor.substr(5, 2)
         );
 
-    if (mes < 1 || mes > 12)
+    if (valor.substr(0, 4) == "0000" || mes < 1 || mes > 12)
     {
         return false;
     }
@@ -341,12 +341,22 @@ ValidadorRegistroTiss::validar(
     else if (!validarFormatoAnoMes(data))
     {
         resultado.adicionarMotivo(
-            "DT_REALIZACAO: formato invalido, "
-            "esperado AAAA-MM"
+            "DT_REALIZACAO: ano/mes invalido, "
+            "esperado AAAA-MM com ano entre 0001 e 9999 e mes entre 01 e 12"
         );
     }
-    else if (!competenciaArquivo.empty())
+    else
     {
+        // Alerta sobre um destino legado potencial, sem converter para time_t.
+        // Janeiro inclui a fronteira; a base nao informa dia ou horario.
+        if (data >= "2038-01")
+        {
+            resultado.adicionarAlerta(
+                "COMPATIBILIDADE_Y2K38: DT_REALIZACAO " + data
+                + " pode exceder timestamps Unix de 32 bits com sinal; "
+                  "janeiro de 2038 inclui a fronteira e nao informa dia/horario"
+            );
+        }
         const std::string competenciaEsperada =
             converterCompetenciaParaAnoMes(
                 competenciaArquivo
@@ -531,7 +541,7 @@ ValidadorRegistroTiss::validar(
                 resultado.adicionarAlerta(
                     "CODIGO_NAO_LOCALIZADO_NO_CATALOGO" + referencia);
             }
-            else if (validarFormatoAnoMes(data) && data.substr(0, 4) != "0000")
+            else if (validarFormatoAnoMes(data))
             {
                 using namespace std::chrono;
                 const year_month mes{

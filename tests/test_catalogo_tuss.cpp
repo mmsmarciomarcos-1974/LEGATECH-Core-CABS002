@@ -61,6 +61,35 @@ try
     exigir(v.validar(registro("10101012", "22", "2025-99")).getEstado() == EstadoValidacao::REJEITADO, "mes invalido");
     exigir(ValidadorRegistroTiss{}.validar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "compatibilidade sem catalogo explicita limite");
 
+    // RF05: competencia mensal, sem fabricar dia ou horario.
+    auto temporal = [&](const std::string& mes, const std::string& competencia = "") {
+        return v.validar(registro("A1", "00", mes, "0", "1"), competencia);
+    };
+    auto temAlertaTemporal = [&](const ResultadoValidacao& r, const std::string& trecho) {
+        for (const auto& alerta : r.getAlertas())
+            if (alerta.find(trecho) != std::string::npos) return true;
+        return false;
+    };
+    for (const auto& mes : {"", "0000-01", "2025-00", "2025-13", "2025-1", "202501", "2025-01-01", "abcd-01"})
+    {
+        const auto r = temporal(mes);
+        exigir(r.getEstado() == EstadoValidacao::REJEITADO && !r.getMotivos().empty(), "data invalida com motivo");
+        exigir(!temAlertaTemporal(r, "Y2K38"), "invalido nao gera alerta temporal");
+    }
+    for (const auto& mes : {"0001-01", "2024-02", "2037-12"})
+        exigir(temporal(mes).getEstado() == EstadoValidacao::VALIDO, "mes valido antes da fronteira");
+    for (const auto& mes : {"2038-01", "2038-02", "2040-02", "9999-12"})
+    {
+        const auto r = temporal(mes);
+        exigir(r.getEstado() == EstadoValidacao::VALIDO_COM_ALERTA && r.getMotivos().empty(), "Y2K38 nao rejeita data valida");
+        exigir(temAlertaTemporal(r, "COMPATIBILIDADE_Y2K38"), "alerta identificado");
+    }
+    exigir(temporal("2025-01", "202501").getEstado() == EstadoValidacao::VALIDO, "competencia igual");
+    exigir(temAlertaTemporal(temporal("2025-01", "202502"), "difere da competencia"), "divergencia contextual alerta");
+    const auto combinado = temporal("2038-01", "203802");
+    exigir(combinado.getAlertas().size() == 2, "Y2K38 e competencia coexistem");
+    std::cout << "OK: datas mensais, ano zero, competencia e alerta Y2K38\n";
+
     // RF04: limites textuais e precisao sem conversao para ponto flutuante.
     auto avaliarCampos = [&](const std::string& id, const std::string& quantidade,
                              const std::string& informado, const std::string& pago,

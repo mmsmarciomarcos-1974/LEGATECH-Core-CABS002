@@ -24,3 +24,7 @@ Use `--export pasta_nova` para exportar classificacoes, rejeicoes e alertas nos 
 ### Limites e precisao dos campos (RF04)
 
 Regras implementadas, fonte consultada e pendencias: [VALIDACAO_CAMPOS.md](VALIDACAO_CAMPOS.md).
+
+### Datas e compatibilidade temporal (RF05)
+
+Regras, fronteira Y2K38 e roteiro da sabatina: [VALIDACAO_TEMPORAL.md](VALIDACAO_TEMPORAL.md).
