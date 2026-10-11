@@ -9,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <chrono>
 #include <stdexcept>
 
@@ -442,6 +443,7 @@ void CsvDAOEntrada::processarArquivo(ProcessadorTiss& processador)
 
 void CsvDAOEntrada::processarArquivoImpl(ProcessadorTiss* processador)
 {
+    constexpr std::size_t INTERVALO_PROGRESSO = 10000;
     const auto inicio = std::chrono::steady_clock::now();
     std::ifstream arquivo(caminhoArquivo, std::ios::binary);
     if (!arquivo.is_open())
@@ -456,7 +458,22 @@ void CsvDAOEntrada::processarArquivoImpl(ProcessadorTiss* processador)
 
     std::size_t total = 0, validos = 0, validosComAlerta = 0;
     std::size_t rejeitados = 0, estruturaDivergente = 0, linhaFisica = 1;
+    std::map<std::string, std::size_t> contagemAlertas;
+    std::map<std::string, std::size_t> contagemMotivos;
+    std::map<std::string, std::string> amostrasAlertas;
+    std::map<std::string, std::string> amostrasMotivos;
     ValidadorRegistroTiss validador(catalogo);
+    const auto exibirProgresso = [&]()
+    {
+        const auto segundos = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - inicio).count();
+        std::cout << "Progresso: " << total << " registros | validos: " << validos
+                  << " | com alerta: " << validosComAlerta
+                  << " | rejeitados: " << rejeitados
+                  << " | tempo: " << segundos << " s\n";
+    };
+    std::cout << "Processamento iniciado. Progresso a cada "
+              << INTERVALO_PROGRESSO << " registros.\n";
     try
     {
         if (auditoria)
@@ -479,8 +496,11 @@ void CsvDAOEntrada::processarArquivoImpl(ProcessadorTiss* processador)
                 ResultadoValidacao resultado(EstadoValidacao::REJEITADO);
                 resultado.adicionarMotivo("ESTRUTURA_DIVERGENTE_DO_CONTRATO");
                 if (auditoria) auditoria->gravar(linhaFisica, linha, nullptr, resultado);
-                std::cout << "\nLinha fisica " << linhaFisica
-                          << " - REJEITADO\n  MOTIVO: estrutura divergente do contrato\n";
+                const std::string motivo = "ESTRUTURA_DIVERGENTE_DO_CONTRATO";
+                ++contagemMotivos[motivo];
+                if (amostrasMotivos.find(motivo) == amostrasMotivos.end())
+                    amostrasMotivos[motivo] = "linha fisica " + std::to_string(linhaFisica);
+                if (total % INTERVALO_PROGRESSO == 0) exibirProgresso();
                 continue;
             }
             RegistroTissBruto registro(campos[0], campos[1], campos[2], campos[3], campos[4],
@@ -495,13 +515,22 @@ void CsvDAOEntrada::processarArquivoImpl(ProcessadorTiss* processador)
                 const bool alerta = resultado.getEstado() == EstadoValidacao::VALIDO_COM_ALERTA;
                 if (alerta) ++validosComAlerta;
                 else ++rejeitados;
-                std::cout << "\nRegistro ID " << registro.getIdEventoAtencaoSaude()
-                          << (alerta ? " - VALIDO COM ALERTA\n" : " - REJEITADO\n");
                 for (const auto& motivo : resultado.getMotivos())
-                    std::cout << "  MOTIVO: " << motivo << '\n';
+                {
+                    ++contagemMotivos[motivo];
+                    if (amostrasMotivos.find(motivo) == amostrasMotivos.end())
+                        amostrasMotivos[motivo] = "linha fisica " + std::to_string(linhaFisica)
+                            + ", registro ID " + registro.getIdEventoAtencaoSaude();
+                }
                 for (const auto& aviso : resultado.getAlertas())
-                    std::cout << "  ALERTA: " << aviso << '\n';
+                {
+                    ++contagemAlertas[aviso];
+                    if (amostrasAlertas.find(aviso) == amostrasAlertas.end())
+                        amostrasAlertas[aviso] = "linha fisica " + std::to_string(linhaFisica)
+                            + ", registro ID " + registro.getIdEventoAtencaoSaude();
+                }
             }
+            if (total % INTERVALO_PROGRESSO == 0) exibirProgresso();
         }
         if (arquivo.bad() || (!arquivo.eof() && arquivo.fail()))
             throw std::runtime_error("Falha durante leitura do CSV: " + caminhoArquivo);
@@ -520,4 +549,18 @@ void CsvDAOEntrada::processarArquivoImpl(ProcessadorTiss* processador)
               << "Rejeitados:             " << rejeitados << '\n'
               << "Estrutura divergente:   " << estruturaDivergente << '\n'
               << "Tempo de processamento: " << duracao.count() << " segundos\n";
+    if (!contagemAlertas.empty())
+    {
+        std::cout << "\nAlertas por tipo (ocorrencias):\n";
+        for (const auto& item : contagemAlertas)
+            std::cout << "  " << item.first << ": " << item.second
+                      << " | exemplo: " << amostrasAlertas[item.first] << '\n';
+    }
+    if (!contagemMotivos.empty())
+    {
+        std::cout << "\nMotivos de rejeicao por tipo (ocorrencias):\n";
+        for (const auto& item : contagemMotivos)
+            std::cout << "  " << item.first << ": " << item.second
+                      << " | exemplo: " << amostrasMotivos[item.first] << '\n';
+    }
 }

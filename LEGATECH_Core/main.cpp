@@ -37,7 +37,10 @@ try
             !std::all_of(competencia.begin(), competencia.end(), [](char c) { return c >= '0' && c <= '9'; }) ||
             competencia.substr(0, 4) == "0000" || competencia.substr(4) < "01" || competencia.substr(4) > "12")
             throw std::runtime_error("Competencia SQLite deve usar AAAAMM com ano e mes validos");
-        std::vector<ReferenciaCatalogoTuss> refs{{argv[4], "22"}};
+        std::vector<ReferenciaCatalogoTuss> refs{
+            {argv[4], "22"},
+            {"../data/reference/tuss20_202501.csv", "20"}
+        };
         if (argc == 6) refs.push_back({argv[5], "63"});
         const CatalogoTuss catalogo(refs, "202501");
         std::cout << "LEGATECH Core - CABS002\nEntrada: SQLite / competencia " << competencia
@@ -59,7 +62,9 @@ try
     }
     // Carregado uma vez; falha de referencia interrompe antes de ler a massa.
     std::vector<ReferenciaCatalogoTuss> referencias{
-        {argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv", "22"}};
+        {argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv", "22"},
+        {"../data/reference/tuss20_202501.csv", "20"}
+    };
     if (!pastaExportacao.empty() && argc == 4) referencias.push_back({argv[3], "63"});
     else if (argc > 4) referencias.push_back({argv[4], "63"});
     const CatalogoTuss catalogo(referencias, "202501");

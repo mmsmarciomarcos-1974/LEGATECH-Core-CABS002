@@ -4,6 +4,7 @@
 	<Project>
 		<Option title="LEGATECH_Core" />
 		<Option pch_mode="2" />
+		<Option default_target="Release" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
@@ -11,6 +12,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters='&quot;C:\Projetos\LEGATECH-Core-CABS002\data\sample\PR_202501_AMB_DET_sample.csv&quot; &quot;C:\Projetos\LEGATECH-Core-CABS002\data\reference\tuss22_202501.csv&quot; &quot;C:\Projetos\LEGATECH-Core-CABS002\data\reference\tuss63_202501.csv&quot; --export &quot;C:\Projetos\LEGATECH-Core-CABS002\data\sample\saida_teste&quot;' />
 				<Compiler>
 					<Add option="-g" />
 					<Add directory="include" />
@@ -21,6 +23,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters='&quot;C:\Projetos\LEGATECH-Core-CABS002\data\sample\PR_202501_AMB_DET.csv&quot; &quot;C:\Projetos\LEGATECH-Core-CABS002\data\reference\tuss22_202501.csv&quot; &quot;C:\Projetos\LEGATECH-Core-CABS002\data\reference\tuss63_202501.csv&quot; --export &quot;C:\Projetos\LEGATECH-Core-CABS002\data\sample\saida_202501_completo&quot;' />
 				<Compiler>
 					<Add option="-O2" />
 					<Add directory="include" />
@@ -35,51 +38,51 @@
 			<Add option="-std=c++23" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="include/AuditoriaValidacao.h" />
+		<Unit filename="include/CatalogoTuss.h" />
 		<Unit filename="include/ContextoTiss.h" />
+		<Unit filename="include/ContratoAmbDet2023Plus.h" />
+		<Unit filename="include/ContratoAmbDetAte2022.h" />
 		<Unit filename="include/ContratoAmbDetV1.h" />
 		<Unit filename="include/ContratoTiss.h" />
 		<Unit filename="include/CsvDAOEntrada.h" />
+		<Unit filename="include/CsvSaidaValidacao.h" />
 		<Unit filename="include/DAOSaida.h" />
+		<Unit filename="include/DAOSaidaValidacao.h" />
 		<Unit filename="include/IdentificadorContextoTiss.h" />
 		<Unit filename="include/ProcessadorTiss.h" />
 		<Unit filename="include/RegistroTissBruto.h" />
 		<Unit filename="include/ResultadoValidacao.h" />
 		<Unit filename="include/ResumoProcessamento.h" />
+		<Unit filename="include/SQLiteAuditoriaValidacao.h" />
 		<Unit filename="include/SQLiteDAOEntrada.h" />
 		<Unit filename="include/SQLiteDAOSaida.h" />
+		<Unit filename="include/SaidasValidacao.h" />
+		<Unit filename="include/SeletorDicionarioTiss.h" />
 		<Unit filename="include/ValidadorRegistroTiss.h" />
 		<Unit filename="include/sqlite3.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="src/CatalogoTuss.cpp" />
 		<Unit filename="src/ContextoTiss.cpp" />
+		<Unit filename="src/ContratoAmbDet2023Plus.cpp" />
+		<Unit filename="src/ContratoAmbDetAte2022.cpp" />
 		<Unit filename="src/ContratoAmbDetV1.cpp" />
 		<Unit filename="src/CsvDAOEntrada.cpp" />
+		<Unit filename="src/CsvSaidaValidacao.cpp" />
 		<Unit filename="src/IdentificadorContextoTiss.cpp" />
 		<Unit filename="src/ProcessadorTiss.cpp" />
 		<Unit filename="src/RegistroTissBruto.cpp" />
 		<Unit filename="src/ResultadoValidacao.cpp" />
 		<Unit filename="src/ResumoProcessamento.cpp" />
+		<Unit filename="src/SQLiteAuditoriaValidacao.cpp" />
 		<Unit filename="src/SQLiteDAOEntrada.cpp" />
 		<Unit filename="src/SQLiteDAOSaida.cpp" />
+		<Unit filename="src/SaidasValidacao.cpp" />
+		<Unit filename="src/SeletorDicionarioTiss.cpp" />
 		<Unit filename="src/ValidadorRegistroTiss.cpp" />
 		<Unit filename="src/sqlite3.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="include/CatalogoTuss.h" />
-		<Unit filename="include/AuditoriaValidacao.h" />
-		<Unit filename="include/SQLiteAuditoriaValidacao.h" />
-		<Unit filename="src/SQLiteAuditoriaValidacao.cpp" />
-		<Unit filename="src/CatalogoTuss.cpp" />
-		<Unit filename="include/ContratoAmbDetAte2022.h" />
-		<Unit filename="src/ContratoAmbDetAte2022.cpp" />
-		<Unit filename="include/ContratoAmbDet2023Plus.h" />
-		<Unit filename="src/ContratoAmbDet2023Plus.cpp" />
-		<Unit filename="include/SeletorDicionarioTiss.h" />
-		<Unit filename="src/SeletorDicionarioTiss.cpp" />
-		<Unit filename="include/DAOSaidaValidacao.h" />
-		<Unit filename="include/CsvSaidaValidacao.h" />
-		<Unit filename="include/SaidasValidacao.h" />
-		<Unit filename="src/CsvSaidaValidacao.cpp" />
-		<Unit filename="src/SaidasValidacao.cpp" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>
