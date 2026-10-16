@@ -3,7 +3,7 @@
   "catalog_sha256": "3f2f2238c3c0e65927f62e50a3723aadd5cc33584b1b65b7ee4d114f210fcad0",
   "catalog_version": "202501",
   "table": "20",
-  "records": 41424,
+  "records": 41416,
   "encoding": "UTF-8",
   "delimiter": ";",
   "date_format": "YYYY-MM-DD",

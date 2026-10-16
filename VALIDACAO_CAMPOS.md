@@ -31,10 +31,12 @@ Para quantidade, o tamanho 6 do dicionario nao esclarece uma escala fixa. O limi
 
 A documentacao explica que componentes de pacotes podem vir sem quantidade e valores, e que novos campos podem nao estar presentes em todos os eventos. Por isso, esta etapa preserva a aceitacao de vazios de quantidade, valores, unidade e indicadores. Nao usa apenas IND_PACOTE para presumir toda a obrigatoriedade: o contexto completo deve ser estabelecido.
 
-Pendentes: obrigatoriedade condicional, consulta ao dominio TUSS 60, cobertura dos catalogos 19/20, revisao das regras de sinais/faixas conforme a origem, aplicabilidade aos contratos historicos e confronto com a massa completa. Nao se deve rejeitar uma linha apenas por faltar um catalogo que o Core nao carregou.
+Pendentes: obrigatoriedade condicional, consulta ao dominio TUSS 60, cobertura do catalogo 19, revisao das regras de sinais/faixas conforme a origem, aplicabilidade aos contratos historicos e confronto com a massa completa. Nao se deve rejeitar uma linha apenas por faltar um catalogo que o Core nao carregou.
 
 ## Testes e explicacao para a sabatina
 
 `python tools/testar_tuss.py` verifica limites exatos e excedidos, campos vazios, zeros iniciais, casas decimais e formatos inadequados. Uma massa controlada confere o mesmo resumo nas entradas CSV e SQLite. A regressao anterior continua obrigatoria.
 
 Na pratica de COBOL, esta etapa corresponde a criticar tamanho, classe numerica e casas decimais antes de aceitar um registro. O Core preserva a representacao textual e verifica os digitos sem usar `double`; isso evita introduzir erro de ponto flutuante ou perda de zeros. Nao e uma implementacao de COMP-3. Os DAOs continuam responsaveis por acesso aos dados; o validador concentra as regras.
+
+A TUSS 20 202501 foi incluída no executável. A regressão verifica hash, contagem e casos reais; isso não comprova cobertura histórica completa.

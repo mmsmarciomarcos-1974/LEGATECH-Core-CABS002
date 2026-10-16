@@ -28,3 +28,11 @@ Regras implementadas, fonte consultada e pendencias: [VALIDACAO_CAMPOS.md](VALID
 ### Datas e compatibilidade temporal (RF05)
 
 Regras, fronteira Y2K38 e roteiro da sabatina: [VALIDACAO_TEMPORAL.md](VALIDACAO_TEMPORAL.md).
+
+## Fechamento CABS002
+
+O executável carrega TUSS 22 e 20; a TUSS 20 deve estar ao lado do CSV de referência 22. A TUSS 63 permanece opcional.
+
+Execute `python tools/testar_tuss.py` na raiz. A suíte inclui testes C++ e cenários de integração Python; não está limitada ao nome do arquivo em `tests/`.
+
+[Evidências e pendências](EVIDENCIAS_CABS002.md) e [roteiro de demonstração](ROTEIRO_SABATINA.md).
