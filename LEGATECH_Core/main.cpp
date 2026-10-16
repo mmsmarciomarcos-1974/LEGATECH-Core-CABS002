@@ -39,7 +39,7 @@ try
             throw std::runtime_error("Competencia SQLite deve usar AAAAMM com ano e mes validos");
         std::vector<ReferenciaCatalogoTuss> refs{
             {argv[4], "22"},
-            {"../data/reference/tuss20_202501.csv", "20"}
+            {(std::filesystem::path(argv[4]).parent_path() / "tuss20_202501.csv").string(), "20"}
         };
         if (argc == 6) refs.push_back({argv[5], "63"});
         const CatalogoTuss catalogo(refs, "202501");
@@ -63,7 +63,7 @@ try
     // Carregado uma vez; falha de referencia interrompe antes de ler a massa.
     std::vector<ReferenciaCatalogoTuss> referencias{
         {argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv", "22"},
-        {"../data/reference/tuss20_202501.csv", "20"}
+        {(std::filesystem::path(argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv").parent_path() / "tuss20_202501.csv").string(), "20"}
     };
     if (!pastaExportacao.empty() && argc == 4) referencias.push_back({argv[3], "63"});
     else if (argc > 4) referencias.push_back({argv[4], "63"});

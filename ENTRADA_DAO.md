@@ -63,4 +63,6 @@ python tools\testar_tuss.py
 
 A regressão compila em C++23, transforma as mesmas amostras CSV em bancos temporários de onze colunas TEXT e confere contagens iguais nas duas fontes, com um ou dois catálogos. Confere competência divergente, banco vazio, banco ausente, tabela/coluna ausente e argumentos inválidos. Os bancos temporários são fechados e removidos; a entrada não é alterada.
 
-Esta etapa disponibiliza as duas entradas e demonstra o ponteiro da base no executável. A entrada SQLite apresenta resumo e tempo no console; auditoria dos seus resultados e a segunda saída por DAO continuam pendentes. Não passar um banco de auditoria como entrada `registro_tiss`. A suíte não mede desempenho da massa completa nem substitui o rebuild e a execução no Windows.
+Esta etapa disponibiliza as duas entradas e demonstra o ponteiro da base no executável. A entrada SQLite apresenta resumo e tempo no console; com `--export`, preserva resultados e ocorrências em CSV e SQLite por DAO, conforme SAIDA_DAO.md. Não passar um banco de auditoria como entrada `registro_tiss`. A suíte não mede desempenho da massa completa nem substitui o rebuild e a execução no Windows.
+
+O executável carrega também a TUSS 20 202501, localizada na mesma pasta do catálogo 22 informado. A ausência dessa referência interrompe a execução.

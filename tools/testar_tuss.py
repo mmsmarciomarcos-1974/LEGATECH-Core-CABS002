@@ -2,6 +2,8 @@
 
 Uso na raiz do projeto: python tools/testar_tuss.py
 Requer gcc e g++ no PATH (MinGW no Windows).
+LEGATECH_SQLITE_SYSTEM=1 usa libsqlite3.so.0 no Linux, apenas para verificacao
+quando a amalgamacao nao esta disponivel; nao comprova o build versionado.
 """
 import os
 import hashlib
@@ -61,19 +63,35 @@ require(manifest["table"] == "63" and manifest["catalog_version"] == "202501" an
 catalog_bytes = GROUPS.read_bytes().replace(b"\r\n", b"\n")
 require(hashlib.sha256(catalog_bytes).hexdigest() == manifest["catalog_sha256"], "Hash do catalogo 63 divergente")
 
+# Confere os tres snapshots, inclusive a TUSS 20 usada pelo executavel.
+for table, filename in [("22", "manifest.json"), ("20", "manifest_tuss20_202501.json")]:
+    metadata = json.loads((ROOT / "data/reference" / filename).read_text(encoding="utf-8"))
+    path = ROOT / "data/reference" / ("tuss" + table + "_202501.csv")
+    require(metadata["table"] == table and metadata["catalog_version"] == "202501", "Identidade do catalogo " + table)
+    require(hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest() == metadata["catalog_sha256"], "Hash do catalogo " + table)
+    with path.open(encoding="utf-8", newline="") as stream:
+        records = list(csv.DictReader(stream, delimiter=";"))
+    require(len(records) == metadata["records"], "Quantidade do catalogo " + table)
+print("OK: hashes e quantidades dos catalogos 20, 22 e 63")
+
 with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     build = Path(scratch)
     suffix = ".exe" if os.name == "nt" else ""
     sqlite = build / "sqlite3.o"
-    run(["gcc", "-O0", "-c", CORE / "src/sqlite3.c", "-o", sqlite])
+    if os.environ.get("LEGATECH_SQLITE_SYSTEM") == "1":
+        sqlite_link = ["-l:libsqlite3.so.0"]
+        print("AVISO: validacao com SQLite do sistema; nao valida a amalgamacao versionada")
+    else:
+        run(["gcc", "-O0", "-c", CORE / "src/sqlite3.c", "-o", sqlite])
+        sqlite_link = [sqlite]
     sources = sorted((CORE / "src").glob("*.cpp"))
     common = ["g++", "-std=c++23", "-Wall", "-Wextra", "-O0", "-I", CORE / "include"]
     libraries = [] if os.name == "nt" else ["-lpthread", "-ldl"]
     app = build / ("legatech" + suffix)
     tests = build / ("test_catalogo_tuss" + suffix)
-    run(common + [CORE / "main.cpp"] + sources + [sqlite] + libraries + ["-o", app])
-    run(common + [ROOT / "tests/test_catalogo_tuss.cpp"] + sources + [sqlite] + libraries + ["-o", tests])
-    print(run([tests, CATALOG, GROUPS]).stdout.strip())
+    run(common + [CORE / "main.cpp"] + sources + sqlite_link + libraries + ["-o", app])
+    run(common + [ROOT / "tests/test_catalogo_tuss.cpp"] + sources + sqlite_link + libraries + ["-o", tests])
+    print(run([tests, CATALOG, GROUPS, ROOT / "data/reference/tuss20_202501.csv"]).stdout.strip())
     for name, expected in [("PR_202501_AMB_DET_sample.csv", [10, 7, 3, 0, 0]),
                            ("PR_202501_AMB_DET_sample_rejeitado.csv", [10, 6, 3, 1, 0])]:
         result = run([app, ROOT / "data/sample" / name, CATALOG])
@@ -106,8 +124,8 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         executions = db.execute("SELECT id,competencia,versao_catalogo,tabela_catalogo,total,validos,alertas,"
                                 "rejeitados,estrutura_divergente,fim_utc FROM auditoria_execucao ORDER BY id").fetchall()
         require(len(executions) == 2, "Reexecucao deve preservar o historico")
-        require(executions[0][1:9] == ("202501", "202501", "22", 10, 7, 3, 0, 0), "Metadados/resumo positivo")
-        require(executions[1][1:9] == ("202501", "202501", "22", 10, 6, 3, 1, 0), "Metadados/resumo negativo")
+        require(executions[0][1:9] == ("202501", "202501", "22,20", 10, 7, 3, 0, 0), "Metadados/resumo positivo")
+        require(executions[1][1:9] == ("202501", "202501", "22,20", 10, 6, 3, 1, 0), "Metadados/resumo negativo")
         require(all(row[-1] for row in executions), "Execucao sem encerramento")
         require(db.execute("SELECT COUNT(*) FROM auditoria_resultado").fetchone()[0] == 20, "Todos os estados gravados")
         for execution, source in zip(executions, [positive, negative]):
@@ -182,7 +200,7 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         check_counts(run([app, source, CATALOG, both_database, GROUPS]).stdout, expected)
     with closing(sqlite3.connect(both_database)) as db, db:
         require(db.execute("SELECT tabela_catalogo,total,validos,alertas,rejeitados FROM auditoria_execucao ORDER BY id").fetchall()
-                == [("22,63", 10, 10, 0, 0), ("22,63", 10, 9, 0, 1)], "Resumo/referencias dos dois catalogos")
+                == [("22,20,63", 10, 10, 0, 0), ("22,20,63", 10, 9, 0, 1)], "Resumo/referencias dos dois catalogos")
         require(db.execute("SELECT COUNT(*) FROM auditoria_ocorrencia WHERE tipo='ALERTA'").fetchone()[0] == 0,
                 "Grupos da amostra ainda geraram alerta")
         require(db.execute("SELECT DISTINCT cd_procedimento FROM auditoria_resultado WHERE cd_tabela_referencia='63' ORDER BY cd_procedimento").fetchall()
@@ -214,6 +232,20 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
             db.execute("CREATE TABLE registro_tiss (" + ",".join(c + " TEXT" for c in columns) + ")")
             db.executemany("INSERT INTO registro_tiss VALUES (" + ",".join("?" for _ in columns) + ")", rows)
 
+    # Catalogo 20 real nas duas entradas e exportacoes.
+    medication = build / "PR_202501_AMB_DET_medicamentos.csv"
+    medication_rows = [["1", "PR", "2025-01", "90035593", "20", "1", "100", "0", "", "0", "0"],
+                       ["2", "PR", "2025-01", "999999999999", "20", "1", "100", "0", "", "0", "0"]]
+    with medication.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream, delimiter=";", lineterminator="\n", quoting=csv.QUOTE_ALL)
+        stream.write(header + "\n")
+        writer.writerows(medication_rows)
+    medication_db = build / "medicamentos.db"
+    create_input(medication_db, medication_rows)
+    check_counts(run([app, medication, CATALOG]).stdout, [2, 1, 1, 0, 0])
+    check_counts(run([app, "--sqlite", medication_db, "202501", CATALOG]).stdout, [2, 1, 1, 0, 0])
+    print("OK: TUSS 20 real, medicamento vigente e ausente nas duas fontes")
+
     for source, expected22, expected_both in [
             (positive, [10, 7, 3, 0, 0], [10, 10, 0, 0, 0]),
             (negative, [10, 6, 3, 1, 0], [10, 9, 0, 1, 0])]:
@@ -231,6 +263,14 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
             # Mes valido, mas diferente da competencia: alerta contextual nas dez linhas.
             check_counts(run([app, "--sqlite", relational, "202502", CATALOG, GROUPS]).stdout,
                          [10, 0, 10, 0, 0])
+    # SELECT nomeia colunas; NULL segue o contrato de texto vazio.
+    reordered = build / "colunas_invertidas.db"
+    with closing(sqlite3.connect(reordered)) as db, db:
+        db.execute("CREATE TABLE registro_tiss (extra TEXT," + ",".join(c + " TEXT" for c in reversed(columns)) + ")")
+        row = ["1","PR","2025-01","10101012","22",None,None,None,None,"0","0"]
+        db.execute("INSERT INTO registro_tiss VALUES (" + ",".join("?" for _ in range(12)) + ")", ["ignorado"] + list(reversed(row)))
+    check_counts(run([app, "--sqlite", reordered, "202501", CATALOG]).stdout, [1, 1, 0, 0, 0])
+    print("OK: colunas fisicas invertidas, coluna extra e NULL normalizado")
     # As novas regras devem produzir as mesmas rejeicoes nas duas fontes.
     limites = build / "PR_202501_AMB_DET_limites.csv"
     with positive.open(encoding="utf-8-sig", newline="") as stream:
@@ -241,8 +281,8 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         ["3","PR","2025-01","10101012","22","1","100.123","0","","0","0"],
         ["9"*31,"PR","2025-01","10101012","22","1","100","0","","0","0"]]
     with limites.open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.writer(stream, delimiter=";", lineterminator="\n")
-        writer.writerow(cabecalho_limites)
+        writer = csv.writer(stream, delimiter=";", lineterminator="\n", quoting=csv.QUOTE_ALL)
+        stream.write(";".join(cabecalho_limites) + "\n")
         writer.writerows(linhas_limites)
     banco_limites = build / "limites.db"
     create_input(banco_limites, linhas_limites)
@@ -280,7 +320,12 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
                     "Classificacao no arquivo CSV incorreto")
             rows.extend(current)
         require(len(rows) == expected[0], "Quantidade CSV divergente")
+        with (destination / "contexto.csv").open(encoding="utf-8", newline="") as stream:
+            contexts = list(csv.DictReader(stream, delimiter=";"))
+        require(len(contexts) == 1, "Contexto CSV deve conter uma execucao")
         with closing(sqlite3.connect(destination / "resultados.db")) as db:
+            saved_context = db.execute("SELECT arquivo,competencia,contrato,versao_catalogo,tabela_catalogo,cabecalho FROM auditoria_execucao").fetchone()
+            require(tuple(contexts[0][key] for key in ["ARQUIVO","COMPETENCIA","CONTRATO","VERSAO_CATALOGO","TABELAS_CATALOGO","CABECALHO_ORIGEM"]) == saved_context, "Contexto CSV/SQLite divergente")
             require(db.execute("SELECT total,validos,alertas,rejeitados,estrutura_divergente FROM auditoria_execucao").fetchone()
                     == tuple(expected), "Resumo SQLite exportado divergente")
             for r in rows:
@@ -299,13 +344,21 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
                 {"aceitos.csv", "rejeitados.csv", "contexto.csv", "resultados.db"}, "Arquivos exportados inesperados")
         return rows
 
+    exports20 = [check_export(args, build / tag, [2, 1, 1, 0, 0]) for tag, args in [
+        ("medicamentos_csv", [medication, CATALOG]),
+        ("medicamentos_sqlite", ["--sqlite", medication_db, "202501", CATALOG])]]
+    require(exports20[0] == exports20[1], "TUSS 20: ocorrencias divergentes entre fontes")
+    exports_limits = [check_export(args, build / tag, [4, 1, 0, 3, 0]) for tag, args in [
+        ("limites_csv", [limites, CATALOG]),
+        ("limites_sqlite", ["--sqlite", banco_limites, "202501", CATALOG])]]
+    require(exports_limits[0] == exports_limits[1], "Limites: motivos divergentes entre fontes")
     # RF05: paridade dos motivos/alertas persistidos, alem dos totais.
     datas = build / "PR_203801_AMB_DET_datas.csv"
     linhas_datas = [[str(i), "PR", mes, "A1", "00", "1", "100", "0", "", "0", "1"]
                     for i, mes in enumerate(["2038-01", "2038-02", "2037-12", "0000-01", "2038-13"], 1)]
     with datas.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.writer(stream, delimiter=";", lineterminator="\n", quoting=csv.QUOTE_ALL)
-        writer.writerow(cabecalho_limites)
+        stream.write(";".join(cabecalho_limites) + "\n")
         writer.writerows(linhas_datas)
     banco_datas = build / "datas.db"
     create_input(banco_datas, linhas_datas)

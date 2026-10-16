@@ -1,0 +1,27 @@
+Base: ff20aff67fbe37e6830daa1221a492ffe0297aa4 + alteracoes desta branch
+Comando: LEGATECH_SQLITE_SYSTEM=1 python tools/testar_tuss.py
+Linux x86_64; g++ 13.3.0; Python 3.12.14; libsqlite3.so.0 3.45.1
+Resultado: retorno 0
+
+OK: hashes e quantidades dos catalogos 20, 22 e 63
+AVISO: validacao com SQLite do sistema; nao valida a amalgamacao versionada
+OK: datas mensais, ano zero, competencia e alerta Y2K38
+OK: limites de campos, precisao decimal, fronteiras e vazios permitidos
+Tabela registro_tiss criada/verificada com sucesso.
+Registro gravado no SQLite com sucesso.
+OK: catalogo, par, temporalidade, falhas de carga, SQLite, auditoria e contrato historico
+OK: PR_202501_AMB_DET_sample.csv [10, 7, 3, 0, 0]
+OK: PR_202501_AMB_DET_sample_rejeitado.csv [10, 6, 3, 1, 0]
+OK: contrato historico em CSV
+OK: falha de configuracao antes de processar a massa
+OK: auditoria SQLite, tres estados, metadados, ocorrencias, linhas e reexecucao
+OK: CRLF, linhas vazias, estrutura divergente, zeros, rejeitado com alerta e rollback
+OK: entrada ausente, cabecalho invalido, banco inacessivel e protecao das entradas
+OK: catalogos 22+63, pares isolados, grupos com zeros, auditoria e falha de referencia
+OK: TUSS 20 real, medicamento vigente e ausente nas duas fontes
+OK: colunas fisicas invertidas, coluna extra e NULL normalizado
+OK: limites e precisao aplicados igualmente em CSV e SQLite
+OK: entrada SQLite por DAO no executavel, paridade CSV, contexto, tempo e falhas sem criar banco
+OK: datas, rejeicoes e alertas Y2K38 exportados igualmente em CSV e SQLite
+OK: saidas CSV/SQLite por DAO, paridade de estados/ocorrencias, historico, zeros e protecao de resultados
+OK: limpeza do diretorio temporario concluida

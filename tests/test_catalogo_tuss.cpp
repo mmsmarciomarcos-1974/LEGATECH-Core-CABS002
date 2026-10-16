@@ -28,7 +28,7 @@ RegistroTissBruto registro(const std::string& codigo, const std::string& tabela 
 int main(int argc, char* argv[])
 try
 {
-    exigir(argc == 3, "caminhos dos catalogos 22 e 63");
+    exigir(argc == 4, "caminhos dos catalogos 22, 63 e 20");
     CatalogoTuss catalogo(argv[1], "202501", "22");
     exigir(catalogo.tamanho() == 5964, "carga integral");
     exigir(catalogo.consultar("19", "10101012") == nullptr, "par isolado por tabela");
@@ -36,6 +36,16 @@ try
     exigir(ambos.tamanho() == 5995, "carga integral das duas tabelas");
     exigir(ambos.contemTabela("22") && ambos.contemTabela("63") && !ambos.contemTabela("19"), "tabelas carregadas");
     exigir(ambos.getTabela() == "22,63", "referencias para auditoria");
+    CatalogoTuss medicamentos(argv[3], "202501", "20");
+    exigir(medicamentos.tamanho() == 41416, "carga integral TUSS 20");
+    exigir(medicamentos.consultar("20", "90035593") != nullptr, "medicamento real localizado");
+    ValidadorRegistroTiss comMedicamentos(&medicamentos);
+    exigir(comMedicamentos.validar(registro("90035593", "20")).getEstado() == EstadoValidacao::VALIDO,
+           "medicamento real vigente");
+    exigir(comMedicamentos.validar(registro("90035593", "20", "2015-12")).getEstado() == EstadoValidacao::REJEITADO,
+           "medicamento antes da vigencia");
+    exigir(comMedicamentos.validar(registro("999999999999", "20")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA,
+           "medicamento ausente nao vira rejeicao");
     ValidadorRegistroTiss comGrupos(&ambos);
     exigir(comGrupos.validar(registro("018", "63")).getEstado() == EstadoValidacao::VALIDO, "grupo vigente com zeros");
     exigir(comGrupos.validar(registro("004", "63")).getEstado() == EstadoValidacao::VALIDO, "segundo grupo vigente");
