@@ -28,3 +28,5 @@ Regras implementadas, fonte consultada e pendencias: [VALIDACAO_CAMPOS.md](VALID
 ### Datas e compatibilidade temporal (RF05)
 
 Regras, fronteira Y2K38 e roteiro da sabatina: [VALIDACAO_TEMPORAL.md](VALIDACAO_TEMPORAL.md).
+
+A origem e a normalização da TUSS 20 estão descritas em [CATALOGO_TUSS20.md](CATALOGO_TUSS20.md).
