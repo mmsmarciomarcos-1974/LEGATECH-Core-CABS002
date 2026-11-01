@@ -19,3 +19,9 @@ O script valida a quantidade esperada de 41.416 registros, códigos duplicados, 
 O Core carrega a TUSS 20 junto com as tabelas 22 e 63. A regressão SQLite executada no Windows confirmou o carregamento conjunto dos catálogos, com 47.411 termos.
 
 A execução dos testes Python está registrada em [AUDITORIA_SQLITE.md](AUDITORIA_SQLITE.md).
+
+## Reprodução validada no Windows
+
+A reprodução do CSV gerou 41.416 registros de dados, além do cabeçalho, com oito campos. A comparação dos arquivos como CSV confirmou equivalência após uniformizar as quebras de linha internas dos campos.
+
+Em quatro registros, a referência contém quebras internas CRLF e a saída reproduzida contém LF. Por isso, os hashes SHA-256 dos arquivos completos diferem: eles identificam os bytes, não apenas os valores dos campos.
