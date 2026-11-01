@@ -104,3 +104,21 @@ quarentena estrutural, preservacao de zeros e rejeitados com alerta.
 Uma falha SQLite e provocada depois de gravacoes para verificar o rollback;
 tambem sao exercitados reuso da conexao e cancelamento pelo destrutor.
 Os bancos e as massas originais nao sao modificados.
+
+## Regressões automatizadas executadas no Windows
+
+Com o executável Release e os catálogos TUSS 22, 20 e 63 disponíveis, foram executados:
+
+```bat
+py tests\test_fluxo_sqlite.py
+py tests\test_fluxo_validacao.py
+
+```
+
+Resultados observados:
+
+- Entrada SQLite: 10 registros processados; 10 válidos; nenhum alerta, rejeição ou divergência estrutural. Exportações CSV e banco de auditoria confirmados.
+- Validação CSV: 7 registros processados; 2 válidos, 1 válido com alerta e 4 rejeitados; 1 divergência estrutural. O teste confirmou a preservação do alerta PAR_TUSS junto com o motivo IND_PACOTE e o caso de tabela própria.
+- Os dois testes terminaram com PASS.
+
+Esses resultados registram a execução dos testes Python no Windows. A execução pelo Code::Blocks e a medição da massa completa de 7.855.323 registros são verificações separadas.
