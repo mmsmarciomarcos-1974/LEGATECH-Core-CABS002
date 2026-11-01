@@ -22,6 +22,7 @@ EXE = CORE / "bin" / "Release" / (
 ENTRADA_SQLITE = ROOT / "data" / "legatech.db"
 TUSS22 = ROOT / "data" / "reference" / "tuss22_202501.csv"
 TUSS63 = ROOT / "data" / "reference" / "tuss63_202501.csv"
+TUSS20 = ROOT / "data" / "reference" / "tuss20_202501.csv"
 
 SAIDA = ROOT / "data" / "output" / "saida_regressao_sqlite_auto"
 
@@ -48,6 +49,7 @@ def main():
     )
     exigir(TUSS22.exists(), f"TUSS 22 nao encontrada: {TUSS22}")
     exigir(TUSS63.exists(), f"TUSS 63 nao encontrada: {TUSS63}")
+    exigir(TUSS20.exists(), f"TUSS 20 nao encontrada: {TUSS20}")
 
     # -------------------------------------------------------
     # Confere a massa SQLite antes da execução
