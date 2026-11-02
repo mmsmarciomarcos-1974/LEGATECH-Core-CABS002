@@ -22,9 +22,9 @@ Os identificadores, pesos e sínteses abaixo seguem o baseline aceito registrado
 
 ## Regras complementares e nomenclatura
 
-A rejeição de conteúdo duplicado compara os onze campos do registro. Os testes `tests/test_fluxo_validacao.py` e `tests/test_fluxo_sqlite_duplicidade.py` passaram nos dois sistemas; a documentação específica está em [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md).
+A rejeição de conteúdo duplicado compara os onze campos do registro. Essa regra complementar é identificada nos documentos do projeto como **DUP-01**. Os testes `tests/test_fluxo_validacao.py` e `tests/test_fluxo_sqlite_duplicidade.py` passaram nos dois sistemas; a documentação específica está em [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md).
 
-**Atenção à nomenclatura:** no baseline acima, RF07 significa registrar motivos de rejeição. A documentação atual da duplicidade também a chama RF07. Esta matriz conserva RF07 para o requisito do baseline e trata a detecção de duplicidade como regra complementar até que uma revisão aprovada do requisito confirme outra numeração. Não confundir “registrar motivos” com “detectar duplicidade”.
+**Distinção em relação ao baseline:** RF07 significa registrar motivos de rejeição. DUP-01 identifica a detecção de registros duplicados, uma regra adicional, sem alterar a lista ou a numeração dos requisitos aceitos. Eventual incorporação de DUP-01 como novo requisito depende de aprovação do responsável pela disciplina.
 
 ## Evidência de execução cruzada
 
@@ -43,6 +43,6 @@ Em 02/11/2026, a suíte abrangente `tools/testar_tuss.py` passou no Ubuntu (`pyt
 
 ## Próximos fechamentos
 
-1. Resolver a numeração divergente da regra de duplicidade em relação ao RF07 do baseline e ajustar os documentos relacionados.
+1. Confirmar com o responsável pela disciplina se a regra DUP-01 deve ser incorporada formalmente ao baseline como novo requisito.
 2. Reconciliar esta matriz com eventual versão mais recente do parecer/requisitos aceitos pelo professor.
 3. Manter processamento em escala como validação separada, planejada para ambiente com memória suficiente; não extrapolar os resultados controlados para a massa completa.
