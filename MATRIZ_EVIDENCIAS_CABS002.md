@@ -38,11 +38,11 @@ Em 02/11/2026, a suíte abrangente `tools/testar_tuss.py` passou no Ubuntu (`pyt
 
 - A referência TUSS 20 tem origem, normalização e manifesto documentados em [CATALOGO_TUSS20.md](CATALOGO_TUSS20.md). A regressão SQLite confirmou o carregamento conjunto dos catálogos 20, 22 e 63, totalizando 47.411 termos.
 - A cobertura não é completa: faltam catálogos necessários a alguns domínios, entre eles TUSS 19 e TUSS 60. Ausência no snapshot carregado não prova que o dado seja inválido.
-- A execução de 500 mil registros e pico observado de 173,2 MiB foram medidos no Windows antes desta matriz. Não constituem benchmark comparável nem validação da massa integral após a inclusão da deduplicação em memória.
-- O algoritmo de duplicidade mantém chaves dos registros vistos em memória. O consumo cresce com a quantidade e o tamanho das chaves distintas. A capacidade na massa integral permanece sem validação nesta versão.
+- No Windows, uma amostra de 500.000 registros foi processada com DUP-01 ativa: 488.276 válidos, 296 válidos com alerta, 11.428 rejeitados e nenhuma divergência estrutural. Entre as rejeições, 11.347 foram por duplicidade. A execução levou 51,794 segundos; o pico de memória observado foi 173,2 MiB.
+- Essa medição é de uma execução em uma máquina específica; não é um benchmark comparativo nem valida o arquivo integral. O consumo de memória da deduplicação cresce com a quantidade e o tamanho das chaves distintas, e a capacidade para processar a massa completa permanece sem validação.
 
 ## Próximos fechamentos
 
 1. Confirmar com o responsável pela disciplina se a regra DUP-01 deve ser incorporada formalmente ao baseline como novo requisito.
 2. Reconciliar esta matriz com eventual versão mais recente do parecer/requisitos aceitos pelo professor.
-3. Manter processamento em escala como validação separada, planejada para ambiente com memória suficiente; não extrapolar os resultados controlados para a massa completa.
+3. Se necessário para a entrega, planejar novo ensaio de escala com registro de ambiente e memória antes/depois; não extrapolar a amostra de 500 mil para o arquivo integral.
