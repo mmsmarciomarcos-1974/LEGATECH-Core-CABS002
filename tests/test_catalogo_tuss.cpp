@@ -200,7 +200,9 @@ try
     SQLiteDAOSaida saida(banco.string());
     ProcessadorTiss processador(saida, &catalogo);
     exigir(processador.processar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO, "processador recebe catalogo");
-    exigir(processador.processar(registro("10101012"), "202502").getEstado() == EstadoValidacao::VALIDO_COM_ALERTA,
+    // Cenário independente: um novo processador representa outra execução de arquivo.
+    ProcessadorTiss processadorComCompetencia(saida, &catalogo);
+    exigir(processadorComCompetencia.processar(registro("10101012"), "202502").getEstado() == EstadoValidacao::VALIDO_COM_ALERTA,
            "processador recebe competencia do arquivo");
     std::ostringstream captura;
     auto* anterior = std::cout.rdbuf(captura.rdbuf());
