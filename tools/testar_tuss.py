@@ -106,8 +106,15 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         executions = db.execute("SELECT id,competencia,versao_catalogo,tabela_catalogo,total,validos,alertas,"
                                 "rejeitados,estrutura_divergente,fim_utc FROM auditoria_execucao ORDER BY id").fetchall()
         require(len(executions) == 2, "Reexecucao deve preservar o historico")
-        require(executions[0][1:9] == ("202501", "202501", "22", 10, 7, 3, 0, 0), "Metadados/resumo positivo")
-        require(executions[1][1:9] == ("202501", "202501", "22", 10, 6, 3, 1, 0), "Metadados/resumo negativo")
+        # A TUSS 20 e carregada automaticamente junto com a TUSS 22.
+        require(
+            executions[0][1:9] == ("202501", "202501", "22,20", 10, 7, 3, 0, 0),
+            f"Metadados/resumo positivo divergentes: {executions[0][1:9]}"
+        )
+        require(
+            executions[1][1:9] == ("202501", "202501", "22,20", 10, 6, 3, 1, 0),
+            f"Metadados/resumo negativo divergentes: {executions[1][1:9]}"
+        )
         require(all(row[-1] for row in executions), "Execucao sem encerramento")
         require(db.execute("SELECT COUNT(*) FROM auditoria_resultado").fetchone()[0] == 20, "Todos os estados gravados")
         for execution, source in zip(executions, [positive, negative]):
@@ -182,7 +189,7 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         check_counts(run([app, source, CATALOG, both_database, GROUPS]).stdout, expected)
     with closing(sqlite3.connect(both_database)) as db, db:
         require(db.execute("SELECT tabela_catalogo,total,validos,alertas,rejeitados FROM auditoria_execucao ORDER BY id").fetchall()
-                == [("22,63", 10, 10, 0, 0), ("22,63", 10, 9, 0, 1)], "Resumo/referencias dos dois catalogos")
+                == [("22,20,63", 10, 10, 0, 0), ("22,20,63", 10, 9, 0, 1)], "Resumo/referencias TUSS 20, 22 e 63")
         require(db.execute("SELECT COUNT(*) FROM auditoria_ocorrencia WHERE tipo='ALERTA'").fetchone()[0] == 0,
                 "Grupos da amostra ainda geraram alerta")
         require(db.execute("SELECT DISTINCT cd_procedimento FROM auditoria_resultado WHERE cd_tabela_referencia='63' ORDER BY cd_procedimento").fetchall()
