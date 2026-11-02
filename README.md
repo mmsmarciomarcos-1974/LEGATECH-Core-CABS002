@@ -32,7 +32,11 @@ Regras, fronteira Y2K38 e roteiro da sabatina: [VALIDACAO_TEMPORAL.md](VALIDACAO
 
 ### Duplicidade de registros (RF07)
 
-Regra implementada, evidências de teste e limite operacional: [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md).
+Regra implementada, evidências de teste e limite operacional: [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md). A matriz registra a relação entre esta regra e o baseline dos requisitos aceitos.
+
+### Matriz de evidências CABS002
+
+Rastreabilidade dos requisitos RF01–RF10, testes, resultados e limitações: [MATRIZ_EVIDENCIAS_CABS002.md](MATRIZ_EVIDENCIAS_CABS002.md).
 
 ## Execução no Windows e no Ubuntu
 
