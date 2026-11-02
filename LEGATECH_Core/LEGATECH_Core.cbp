@@ -12,7 +12,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters='&quot;C:\Projetos\LEGATECH-Core-CABS002\data\sample\PR_202501_AMB_DET_sample.csv&quot; &quot;C:\Projetos\LEGATECH-Core-CABS002\data\reference\tuss22_202501.csv&quot; &quot;C:\Projetos\LEGATECH-Core-CABS002\data\reference\tuss63_202501.csv&quot; --export &quot;C:\Projetos\LEGATECH-Core-CABS002\data\sample\saida_teste&quot;' />
+				<Option parameters='&quot;../data/sample/PR_202501_AMB_DET_validacao.csv&quot; &quot;../data/reference/tuss22_202501.csv&quot; &quot;../data/reference/tuss63_202501.csv&quot; --export &quot;../data/output/saida_codeblocks&quot;' />
 				<Compiler>
 					<Add option="-g" />
 					<Add directory="include" />
@@ -23,7 +23,7 @@
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters='&quot;C:\Projetos\LEGATECH-Core-CABS002\data\sample\PR_202501_AMB_DET.csv&quot; &quot;C:\Projetos\LEGATECH-Core-CABS002\data\reference\tuss22_202501.csv&quot; &quot;C:\Projetos\LEGATECH-Core-CABS002\data\reference\tuss63_202501.csv&quot; --export &quot;C:\Projetos\LEGATECH-Core-CABS002\data\sample\saida_202501_completo&quot;' />
+				<Option parameters='&quot;../data/sample/PR_202501_AMB_DET_validacao.csv&quot; &quot;../data/reference/tuss22_202501.csv&quot; &quot;../data/reference/tuss63_202501.csv&quot; --export &quot;../data/output/saida_codeblocks&quot;' />
 				<Compiler>
 					<Add option="-O2" />
 					<Add directory="include" />
