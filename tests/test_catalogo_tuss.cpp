@@ -45,25 +45,33 @@ try
     exigir(comGrupos.validar(registro("018", "22")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "grupo 63 nao localizado em 22");
     exigir(comGrupos.validar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO, "tabela 22 preservada");
     exigir(comGrupos.validar(registro("40311511")).getEstado() == EstadoValidacao::REJEITADO, "vigencia 22 preservada");
-    ValidadorRegistroTiss v(&catalogo);
-    exigir(v.validar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO, "consulta vigente");
-    exigir(v.validar(registro("99999999")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "ausencia no snapshot");
-    exigir(v.validar(registro("010101012")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "nao remover zeros");
-    exigir(v.validar(registro("40311511")).getEstado() == EstadoValidacao::REJEITADO, "inicio futuro");
-    exigir(v.validar(registro("40311511", "22", "2025-02")).getEstado() == EstadoValidacao::VALIDO, "mes inicial completo");
-    exigir(v.validar(registro("40309223", "22", "2025-04")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "fronteira do fim");
-    exigir(v.validar(registro("40309223", "22", "2025-05")).getEstado() == EstadoValidacao::REJEITADO, "apos fim");
-    exigir(v.validar(registro("018", "63")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "catalogo outra tabela");
-    exigir(v.validar(registro("A1", "00", "2025-01", "0", "1")).getEstado() == EstadoValidacao::VALIDO, "propria alfanumerica");
-    exigir(v.validar(registro("A1", "90", "2025-01", "1")).getEstado() == EstadoValidacao::VALIDO, "pacote alfanumerico");
-    exigir(v.validar(registro("A1", "98", "2025-01", "0")).getEstado() == EstadoValidacao::REJEITADO, "pacote incoerente");
-    exigir(v.validar(registro("ABC")).getEstado() == EstadoValidacao::REJEITADO, "procedimento nao numerico");
-    exigir(v.validar(registro("10101012", "22", "2025-99")).getEstado() == EstadoValidacao::REJEITADO, "mes invalido");
+    auto validarSemHistorico = [&](const RegistroTissBruto& item) {
+        ValidadorRegistroTiss validador(&catalogo);
+        return validador.validar(item);
+    };
+    auto validarComCompetencia = [&](const RegistroTissBruto& item,
+                                     const std::string& competencia) {
+        ValidadorRegistroTiss validador(&catalogo);
+        return validador.validar(item, competencia);
+    };
+    exigir(validarSemHistorico(registro("10101012")).getEstado() == EstadoValidacao::VALIDO, "consulta vigente");
+    exigir(validarSemHistorico(registro("99999999")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "ausencia no snapshot");
+    exigir(validarSemHistorico(registro("010101012")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "nao remover zeros");
+    exigir(validarSemHistorico(registro("40311511")).getEstado() == EstadoValidacao::REJEITADO, "inicio futuro");
+    exigir(validarSemHistorico(registro("40311511", "22", "2025-02")).getEstado() == EstadoValidacao::VALIDO, "mes inicial completo");
+    exigir(validarSemHistorico(registro("40309223", "22", "2025-04")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "fronteira do fim");
+    exigir(validarSemHistorico(registro("40309223", "22", "2025-05")).getEstado() == EstadoValidacao::REJEITADO, "apos fim");
+    exigir(validarSemHistorico(registro("018", "63")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "catalogo outra tabela");
+    exigir(validarSemHistorico(registro("A1", "00", "2025-01", "0", "1")).getEstado() == EstadoValidacao::VALIDO, "propria alfanumerica");
+    exigir(validarSemHistorico(registro("A1", "90", "2025-01", "1")).getEstado() == EstadoValidacao::VALIDO, "pacote alfanumerico");
+    exigir(validarSemHistorico(registro("A1", "98", "2025-01", "0")).getEstado() == EstadoValidacao::REJEITADO, "pacote incoerente");
+    exigir(validarSemHistorico(registro("ABC")).getEstado() == EstadoValidacao::REJEITADO, "procedimento nao numerico");
+    exigir(validarSemHistorico(registro("10101012", "22", "2025-99")).getEstado() == EstadoValidacao::REJEITADO, "mes invalido");
     exigir(ValidadorRegistroTiss{}.validar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "compatibilidade sem catalogo explicita limite");
 
     // RF05: competencia mensal, sem fabricar dia ou horario.
     auto temporal = [&](const std::string& mes, const std::string& competencia = "") {
-        return v.validar(registro("A1", "00", mes, "0", "1"), competencia);
+        return validarComCompetencia(registro("A1", "00", mes, "0", "1"), competencia);
     };
     auto temAlertaTemporal = [&](const ResultadoValidacao& r, const std::string& trecho) {
         for (const auto& alerta : r.getAlertas())
@@ -94,8 +102,11 @@ try
     auto avaliarCampos = [&](const std::string& id, const std::string& quantidade,
                              const std::string& informado, const std::string& pago,
                              const std::string& unidade = "") {
-        return v.validar(RegistroTissBruto(id,"PR","2025-01","10101012","22",
-                                          quantidade,informado,pago,unidade,"0","0"), "202501");
+        return validarComCompetencia(
+            RegistroTissBruto(id,"PR","2025-01","10101012","22",
+                              quantidade,informado,pago,unidade,"0","0"),
+            "202501"
+        );
     };
     auto temMotivo = [&](const ResultadoValidacao& r, const std::string& trecho) {
         for (const auto& motivo : r.getMotivos()) if (motivo.find(trecho) != std::string::npos) return true;
@@ -116,11 +127,11 @@ try
     exigir(avaliarCampos("1","","","","").getEstado() == EstadoValidacao::VALIDO, "vazios preservados sem obrigatoriedade presumida");
     exigir(avaliarCampos("1","1","000100,50","0",std::string(40,'A')).getEstado() == EstadoValidacao::VALIDO, "zeros e tamanho 40 preservados");
     exigir(temMotivo(avaliarCampos("1","1","100","0",std::string(41,'A')),"UNIDADE_MEDIDA"), "unidade acima de 40");
-    exigir(v.validar(registro(std::string(40,'A'),"00","2025-01","0","1")).getEstado() == EstadoValidacao::VALIDO,
+    exigir(validarSemHistorico(registro(std::string(40,'A'),"00","2025-01","0","1")).getEstado() == EstadoValidacao::VALIDO,
             "codigo proprio tamanho 40 aceito");
-    exigir(temMotivo(v.validar(registro(std::string(41,'A'),"00","2025-01","0","1")),"CD_PROCEDIMENTO: tamanho"),
+    exigir(temMotivo(validarSemHistorico(registro(std::string(41,'A'),"00","2025-01","0","1")),"CD_PROCEDIMENTO: tamanho"),
             "codigo proprio acima de 40");
-    exigir(temMotivo(v.validar(registro("1",std::string(41,'9'))),"CD_TABELA_REFERENCIA: tamanho"), "tabela acima de 40");
+    exigir(temMotivo(validarSemHistorico(registro("1",std::string(41,'9'))),"CD_TABELA_REFERENCIA: tamanho"), "tabela acima de 40");
     std::cout << "OK: limites de campos, precisao decimal, fronteiras e vazios permitidos\n";
 
     const auto diretorio = std::filesystem::temp_directory_path() /
@@ -205,16 +216,16 @@ try
         SQLiteAuditoriaValidacao auditoria(bancoAuditoria.string());
         auditoria.iniciar(contexto);
         const auto r = registro("10101012");
-        auditoria.gravar(2, "linha", &r, v.validar(r));
+        auditoria.gravar(2, "linha", &r, validarSemHistorico(r));
         bool duplicou = false;
-        try { auditoria.gravar(2, "linha duplicada", &r, v.validar(r)); }
+        try { auditoria.gravar(2, "linha duplicada", &r, validarSemHistorico(r)); }
         catch (const std::exception&) { duplicou = true; }
         exigir(duplicou && auditoria.getIdExecucao() == 0, "falha cancela execucao");
         auditoria.iniciar(contexto);
-        auditoria.gravar(2, "linha confirmada", &r, v.validar(r));
+        auditoria.gravar(2, "linha confirmada", &r, validarSemHistorico(r));
         auditoria.finalizar();
         auditoria.iniciar(contexto);
-        auditoria.gravar(2, "linha abandonada", &r, v.validar(r));
+        auditoria.gravar(2, "linha abandonada", &r, validarSemHistorico(r));
         // O destrutor cancela a terceira tentativa sem afetar a confirmada.
     }
     sqlite3* db = nullptr;
@@ -238,15 +249,15 @@ try
         DAOSaidaValidacao* dao = &saidas;
         dao->iniciar(contexto);
         const auto r = registro("10101012");
-        dao->gravar(2, "linha", &r, v.validar(r));
+        dao->gravar(2, "linha", &r, validarSemHistorico(r));
         bool falhou = false;
-        try { dao->gravar(2, "duplicada", &r, v.validar(r)); }
+        try { dao->gravar(2, "duplicada", &r, validarSemHistorico(r)); }
         catch (const std::exception&) { falhou = true; }
         exigir(falhou && !std::filesystem::exists(exportacao), "falha nao publica formatos parciais");
         for (const auto& entrada : std::filesystem::directory_iterator(diretorio))
             exigir(entrada.path().filename().string().find("exportacao.tmp-") != 0, "limpeza apos falha");
         dao->iniciar(contexto);
-        dao->gravar(2, "confirmada", &r, v.validar(r));
+        dao->gravar(2, "confirmada", &r, validarSemHistorico(r));
         dao->finalizar();
         exigir(std::filesystem::exists(exportacao / "resultados.db") &&
                std::filesystem::exists(exportacao / "aceitos.csv"), "reuso publica os dois formatos");
