@@ -29,4 +29,8 @@ Regras implementadas, fonte consultada e pendencias: [VALIDACAO_CAMPOS.md](VALID
 
 Regras, fronteira Y2K38 e roteiro da sabatina: [VALIDACAO_TEMPORAL.md](VALIDACAO_TEMPORAL.md).
 
+### Duplicidade de registros (RF07)
+
+Regra implementada, evidências de teste e limite operacional: [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md).
+
 A origem e a normalização da TUSS 20 estão descritas em [CATALOGO_TUSS20.md](CATALOGO_TUSS20.md).

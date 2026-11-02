@@ -265,7 +265,7 @@ namespace
 ResultadoValidacao
 ValidadorRegistroTiss::validar(
     const RegistroTissBruto& registro
-) const
+)
 {
     return validar(
         registro,
@@ -282,7 +282,7 @@ ResultadoValidacao
 ValidadorRegistroTiss::validar(
     const RegistroTissBruto& registro,
     const std::string& competenciaArquivo
-) const
+)
 {
     ResultadoValidacao resultado(
         EstadoValidacao::VALIDO
@@ -713,6 +713,25 @@ ValidadorRegistroTiss::validar(
     // Um ou mais motivos:
     //     REJEITADO
     //
+    const std::array<std::string, 11> chaveRegistro{
+        registro.getIdEventoAtencaoSaude(),
+        registro.getUfPrestador(),
+        registro.getDtRealizacao(),
+        registro.getCdProcedimento(),
+        registro.getCdTabelaReferencia(),
+        registro.getQtItemEventoInformado(),
+        registro.getVlItemEventoInformado(),
+        registro.getVlItemPagoFornecedor(),
+        registro.getUnidadeMedida(),
+        registro.getIndPacote(),
+        registro.getIndTabelaPropria()
+    };
 
+    if (!registrosVistos.insert(chaveRegistro).second)
+    {
+        resultado.adicionarMotivo(
+            "DUPLICIDADE: registro repetido (11 campos identicos)"
+        );
+    }
     return resultado;
 }

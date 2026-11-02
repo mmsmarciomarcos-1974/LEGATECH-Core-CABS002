@@ -83,28 +83,20 @@ def main():
 
     exigir(processo.returncode == 0, f"Core retornou RC={processo.returncode}")
 
-    # -------------------------------------------------------
-    # Artefatos
-    # -------------------------------------------------------
-
+    # Artefatos de saida
     exigir(SAIDA.exists(), "pasta de exportacao nao foi criada")
     exigir(ACEITOS.exists(), "aceitos.csv nao foi criado")
     exigir(REJEITADOS.exists(), "rejeitados.csv nao foi criado")
     exigir(CONTEXTO.exists(), "contexto.csv nao foi criado")
     exigir(BANCO.exists(), "resultados.db nao foi criado")
 
-    # CSV:
-    # 2 VALIDOS + 1 VALIDO_COM_ALERTA = 3 aceitos
+    # CSV: 2 validos + 1 valido com alerta; 5 rejeitados.
     exigir(contar_csv(ACEITOS) == 3, "aceitos.csv deveria conter 3 registros")
-    exigir(contar_csv(REJEITADOS) == 4, "rejeitados.csv deveria conter 4 registros")
+    exigir(contar_csv(REJEITADOS) == 5, "rejeitados.csv deveria conter 5 registros")
     exigir(contar_csv(CONTEXTO) == 1, "contexto.csv deveria conter 1 execucao")
 
-    # -------------------------------------------------------
-    # SQLite
-    # -------------------------------------------------------
-
+    # Auditoria SQLite
     with sqlite3.connect(BANCO) as banco:
-
         execucao = banco.execute(
             """
             select
@@ -118,9 +110,8 @@ def main():
         ).fetchone()
 
         exigir(execucao is not None, "auditoria_execucao nao encontrada")
-
         exigir(
-            execucao == (7, 2, 1, 4, 1),
+            execucao == (8, 2, 1, 5, 1),
             f"totais inesperados: {execucao}"
         )
 
@@ -139,13 +130,28 @@ def main():
             estados.get("VALIDO_COM_ALERTA") == 1,
             "esperado 1 VALIDO_COM_ALERTA"
         )
-        exigir(estados.get("REJEITADO") == 4, "esperados 4 REJEITADOS")
+        exigir(estados.get("REJEITADO") == 5, "esperados 5 REJEITADOS")
 
-        # ---------------------------------------------------
-        # Caso crítico:
-        # REJEITADO preservando ALERTA + MOTIVO
-        # ---------------------------------------------------
+        # A duplicidade deve estar registrada como motivo de um resultado rejeitado.
+        duplicidades = banco.execute(
+            """
+            select count(*)
+            from auditoria_ocorrencia o
+            join auditoria_resultado r
+              on r.id = o.resultado_id
+            where r.id_evento = '990000000001'
+              and r.estado = 'REJEITADO'
+              and o.tipo = 'MOTIVO'
+              and o.mensagem like 'DUPLICIDADE:%'
+            """
+        ).fetchone()[0]
 
+        exigir(
+            duplicidades == 1,
+            f"esperada 1 duplicidade rejeitada, encontradas {duplicidades}"
+        )
+
+        # Caso critico: rejeitado preservando alerta e motivo.
         estado_005 = banco.execute(
             """
             select estado
@@ -184,16 +190,12 @@ def main():
             tem_alerta,
             "990000000005 deveria preservar ALERTA PAR_TUSS"
         )
-
         exigir(
             tem_motivo,
             "990000000005 deveria possuir MOTIVO IND_PACOTE"
         )
 
-        # ---------------------------------------------------
-        # Tabela própria contextual
-        # ---------------------------------------------------
-
+        # Tabela propria contextual.
         estado_006 = banco.execute(
             """
             select estado
@@ -207,10 +209,7 @@ def main():
             "990000000006 deveria permanecer VALIDO"
         )
 
-        # ---------------------------------------------------
-        # Estrutura divergente
-        # ---------------------------------------------------
-
+        # Estrutura divergente.
         divergente = banco.execute(
             """
             select count(*)
@@ -228,11 +227,12 @@ def main():
     print("==========================================")
     print("PASS - regressao do fluxo validada")
     print("==========================================")
-    print("Total:                 7")
+    print("Total:                 8")
     print("VALIDO:                2")
     print("VALIDO_COM_ALERTA:     1")
-    print("REJEITADO:             4")
+    print("REJEITADO:             5")
     print("Estrutura divergente:  1")
+    print("Duplicidade:           OK")
     print("CSV:                    OK")
     print("SQLite:                 OK")
     print("Alerta + motivo:        OK")
