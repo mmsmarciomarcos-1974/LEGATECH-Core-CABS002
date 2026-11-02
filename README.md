@@ -30,9 +30,9 @@ Regras implementadas, fonte consultada e pendencias: [VALIDACAO_CAMPOS.md](VALID
 
 Regras, fronteira Y2K38 e roteiro da sabatina: [VALIDACAO_TEMPORAL.md](VALIDACAO_TEMPORAL.md).
 
-### Duplicidade de registros (RF07)
+### Regra complementar DUP-01 — duplicidade de registros
 
-Regra implementada, evidências de teste e limite operacional: [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md). A matriz registra a relação entre esta regra e o baseline dos requisitos aceitos.
+A duplicidade é um controle complementar e não altera a numeração do baseline aceito, no qual RF07 corresponde ao registro dos motivos de rejeição. Regra, evidências de teste e limite operacional: [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md).
 
 ### Matriz de evidências CABS002
 
