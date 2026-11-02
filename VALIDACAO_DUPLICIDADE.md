@@ -1,4 +1,6 @@
-# RF07: rejeicao de registros duplicados
+# DUP-01: rejeição de registros duplicados (regra complementar)
+
+Esta é uma regra complementar do projeto; ela não altera o baseline dos requisitos aceitos. Nesse baseline, RF07 significa registrar os motivos de rejeição. A duplicidade é um controle adicional identificado aqui como DUP-01 para não confundir as duas funções.
 
 ## Regra implementada
 
