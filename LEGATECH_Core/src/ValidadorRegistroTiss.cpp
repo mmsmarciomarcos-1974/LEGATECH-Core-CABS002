@@ -519,15 +519,10 @@ ValidadorRegistroTiss::validar(
     // Consulta externa do PAR, sem lista de procedimentos no codigo.
     // Referencias proprias/pacotes seguem as regras acima.
     if (tabelaTussSuportada(tabelaReferencia) &&
-        possuiSomenteDigitos(procedimento))
+        possuiSomenteDigitos(procedimento) &&
+        indTabelaPropria != "1")
     {
-        if (indTabelaPropria == "1")
-        {
-            resultado.adicionarAlerta(
-                "PAR_TUSS: tabela padronizada com IND_TABELA_PROPRIA=1; "
-                "existencia TUSS nao verificada");
-        }
-        else if (!catalogo || !catalogo->contemTabela(tabelaReferencia))
+        if (!catalogo || !catalogo->contemTabela(tabelaReferencia))
         {
             resultado.adicionarAlerta(
                 "CATALOGO_NAO_CARREGADO: tabela " + tabelaReferencia);
@@ -684,6 +679,19 @@ ValidadorRegistroTiss::validar(
     {
         resultado.adicionarMotivo(
             "IND_TABELA_PROPRIA: valor invalido, esperado 0 ou 1"
+        );
+    }
+
+    // Uma referencia TUSS identifica um codigo da terminologia padronizada.
+    // Codigo criado pela operadora deve usar a referencia 00; 90/98 identificam
+    // especificamente tabelas proprias de pacotes. Nao rejeitamos codigos
+    // ausentes do snapshot TUSS, mas rejeitamos esta contradicao explicita.
+    if (tabelaTussSuportada(tabelaReferencia) &&
+        indTabelaPropria == "1")
+    {
+        resultado.adicionarMotivo(
+            "IND_TABELA_PROPRIA: codigo marcado como proprio "
+            "incompativel com CD_TABELA_REFERENCIA TUSS"
         );
     }
 

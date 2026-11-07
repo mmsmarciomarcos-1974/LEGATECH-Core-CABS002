@@ -39,9 +39,21 @@ Para os campos do item do extrato `AMB_DET`, a semantica dos nomes corresponde a
 
 A precisao vem do dicionario do extrato (`NUMBER(18,2)`): ate 16 digitos inteiros e duas casas decimais. Zero e valido para ambos os campos. Valor informado negativo e rejeitado. A regra 234 do Componente Organizacional da ANS permite valor negativo no campo pago para registrar estorno, desde que a soma dos valores pagos do item ou da guia nao fique negativa. A regra nao nomeia especificamente o campo de pagamento direto ao fornecedor; por isso, aceitar sinal negativo em `VL_ITEM_PAGO_FORNECEDOR` e uma interpretacao conservadora dessa regra geral de estorno, marcada com alerta. O saldo acumulado e a justificativa do estorno nao podem ser confirmados em uma linha isolada. A validacao local tambem nao verifica somatorios ou igualdade entre lancamentos da mesma guia. O CCE 202207 e a referencia semantica consultada; nao declaramos conformidade integral de cada mensagem/guia ou de todas as versoes do TISS.
 
+### Regras fechadas para os indicadores de pacote e tabela propria
+
+Os indicadores continuam opcionais quando o registro nao permite inferir seu contexto. As combinacoes verificaveis no extrato sao:
+
+| `CD_TABELA_REFERENCIA` | Condicao aplicada |
+|---|---|
+| `00` | Exige `IND_TABELA_PROPRIA=1`. Pode ter `IND_PACOTE=1` quando o codigo proprio identifica componente de pacote. |
+| `90` ou `98` | Exige `IND_PACOTE=1`, pois a referencia identifica tabela propria de pacote. O valor de `IND_TABELA_PROPRIA` permanece opcional: nao se infere sua obrigatoriedade adicional para essas referencias. |
+| TUSS suportada (`19`, `20`, `22` ou `63`) | `IND_TABELA_PROPRIA=1` e rejeitado por contradizer a referencia padronizada. `IND_PACOTE=1` e permitido para componente TUSS de pacote; `0` ou vazio tambem sao aceitos. |
+
+A ANS define `00` como tabela propria das operadoras e `90`/`98` como tabelas proprias de pacotes. O exemplo oficial de pacote registra o pacote em `98` e um componente em TUSS `22`; as regras da ANS tambem admitem componentes identificados por TUSS ou tabela propria. Por isso, nao se exige que todo componente de pacote use `90`/`98`. Fonte: [Componente Organizacional do Padrao TISS, maio de 2026, itens 114-119 e Quadro 18](https://www.gov.br/ans/pt-br/assuntos/prestadores/padrao-para-troca-de-informacao-de-saude-suplementar-2013-tiss/PadroTISS_ComponenteOrganizacional_202605.pdf). A versao consultada fundamenta a semantica dos codigos; a aplicabilidade historica exata ao extrato 202501 continua delimitada pela competencia registrada acima.
+
 ## Vazios e pendencias
 
-A aceitacao de campo vazio no extrato segue a regra especifica de cada campo: quantidade, unidade e indicadores permanecem opcionais nesta validacao; os valores do item sao obrigatorios, exceto em componente de pacote identificado por `IND_PACOTE=1`. Valor negativo e aceito apenas em `VL_ITEM_PAGO_FORNECEDOR`, com alerta para verificacao do estorno e do saldo da guia.
+A aceitacao de campo vazio no extrato segue a regra especifica de cada campo: quantidade, unidade e indicadores permanecem opcionais nesta validacao, exceto quando a referencia permite verificar uma combinacao obrigatoria (`00` exige tabela propria e `90`/`98` exigem pacote); os valores do item sao obrigatorios, exceto em componente de pacote identificado por `IND_PACOTE=1`. Valor negativo e aceito apenas em `VL_ITEM_PAGO_FORNECEDOR`, com alerta para verificacao do estorno e do saldo da guia.
 
 Pendentes: obrigatoriedade condicional dos demais campos, consulta ao dominio TUSS 60, consistencias entre itens da mesma guia, aplicabilidade historica e confronto com a massa completa. Para `QT_ITEM_EVENTO_INFORMADO` e os dois valores do item, as regras locais do extrato estao documentadas acima; a validacao integral de mensagens/guias continua fora deste escopo. Os catalogos TUSS 19, 20, 22 e 63 sao carregados pelo Core. Um codigo TUSS ausente do snapshot continua gerando alerta, nao rejeicao.
 
