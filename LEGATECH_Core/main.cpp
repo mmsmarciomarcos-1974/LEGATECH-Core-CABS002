@@ -39,6 +39,49 @@ std::string resolverCaminhoTuss20()
     throw std::runtime_error(
         "Nao foi possivel localizar data/reference/tuss20_202501.csv.");
 }
+
+std::vector<ReferenciaCatalogoTuss> resolverReferenciasTuss19()
+{
+    const std::filesystem::path relativo =
+        std::filesystem::path("data") / "reference" / "tuss19_202501";
+    static const std::vector<std::size_t> registrosPorParte{
+        184598, 184598, 184598, 184598, 184598, 184598, 184594
+    };
+    std::filesystem::path base = std::filesystem::current_path();
+
+    while (true)
+    {
+        const auto diretorio = base / relativo;
+        std::vector<ReferenciaCatalogoTuss> referencias;
+        bool encontrouParte = false;
+        bool conjuntoCompleto = true;
+        for (std::size_t i = 0; i < registrosPorParte.size(); ++i)
+        {
+            const auto caminho = diretorio /
+                ("tuss19_202501_part" + (i + 1 < 10 ? std::string("0") : std::string()) +
+                 std::to_string(i + 1) + ".csv");
+            const bool existe = std::filesystem::is_regular_file(caminho);
+            encontrouParte |= existe;
+            conjuntoCompleto &= existe;
+            if (existe)
+                referencias.push_back({caminho.string(), "19", registrosPorParte[i]});
+        }
+
+        if (encontrouParte)
+        {
+            if (!conjuntoCompleto)
+                throw std::runtime_error("Catalogo TUSS 19 incompleto: sao necessarias as sete partes 202501.");
+            return referencias;
+        }
+
+        const auto pai = base.parent_path();
+        if (pai == base)
+            break;
+        base = pai;
+    }
+
+    return {};
+}
 }
 int main(int argc, char* argv[])
 try
@@ -65,6 +108,8 @@ try
 	    {resolverCaminhoTuss20(), "20"}
         };
         if (argc == 6) refs.push_back({argv[5], "63"});
+        const auto referenciasTuss19 = resolverReferenciasTuss19();
+        refs.insert(refs.end(), referenciasTuss19.begin(), referenciasTuss19.end());
         const CatalogoTuss catalogo(refs, "202501");
         std::cout << "LEGATECH Core - CABS002\nEntrada: SQLite / competencia " << competencia
                   << "\nCatalogo TUSS " << catalogo.getVersao() << " / tabela " << catalogo.getTabela()
@@ -90,6 +135,8 @@ try
     };
     if (!pastaExportacao.empty() && argc == 4) referencias.push_back({argv[3], "63"});
     else if (argc > 4) referencias.push_back({argv[4], "63"});
+    const auto referenciasTuss19 = resolverReferenciasTuss19();
+    referencias.insert(referencias.end(), referenciasTuss19.begin(), referenciasTuss19.end());
     const CatalogoTuss catalogo(referencias, "202501");
     std::cout << "Catalogo TUSS " << catalogo.getVersao()
               << " / tabela " << catalogo.getTabela()

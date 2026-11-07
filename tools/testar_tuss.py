@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CORE = ROOT / "LEGATECH_Core"
 CATALOG = ROOT / "data/reference/tuss22_202501.csv"
 GROUPS = ROOT / "data/reference/tuss63_202501.csv"
+TUSS19_DIR = ROOT / "data/reference/tuss19_202501"
 
 
 def run(args):
@@ -61,6 +62,23 @@ require(manifest["table"] == "63" and manifest["catalog_version"] == "202501" an
 catalog_bytes = GROUPS.read_bytes().replace(b"\r\n", b"\n")
 require(hashlib.sha256(catalog_bytes).hexdigest() == manifest["catalog_sha256"], "Hash do catalogo 63 divergente")
 
+manifest19 = json.loads((TUSS19_DIR / "manifest.json").read_text(encoding="utf-8"))
+require(manifest19["catalog_version"] == "202501" and manifest19["table"] == "19"
+        and manifest19["records"] == 1292182 and manifest19["unique_codes"] == 1292182
+        and manifest19["source_zip_sha256"] == "e4f7ee54d0e06c6c7f5a3374fb8cd8bedd67069e6c44f1d05b03a89298f30275",
+        "Identificacao/quantidade do snapshot TUSS 19 divergente")
+total19 = 0
+for part in manifest19["parts"]:
+    path = TUSS19_DIR / part["file"]
+    payload = path.read_bytes()
+    require(hashlib.sha256(payload).hexdigest() == part["sha256"], "Hash de parte TUSS 19 divergente: " + part["file"])
+    with path.open(encoding="utf-8", newline="") as source:
+        rows = list(csv.reader(source, delimiter=";"))
+    require(rows[0] == ["cd_procedimento", "inicio_vigencia", "fim_vigencia"], "Cabecalho compacto TUSS 19 divergente")
+    require(len(rows) - 1 == part["records"], "Quantidade de registros TUSS 19 divergente: " + part["file"])
+    total19 += len(rows) - 1
+require(total19 == manifest19["records"], "Total das partes TUSS 19 divergente")
+
 with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     build = Path(scratch)
     suffix = ".exe" if os.name == "nt" else ""
@@ -73,7 +91,7 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     tests = build / ("test_catalogo_tuss" + suffix)
     run(common + [CORE / "main.cpp"] + sources + [sqlite] + libraries + ["-o", app])
     run(common + [ROOT / "tests/test_catalogo_tuss.cpp"] + sources + [sqlite] + libraries + ["-o", tests])
-    print(run([tests, CATALOG, GROUPS]).stdout.strip())
+    print(run([tests, CATALOG, GROUPS, TUSS19_DIR]).stdout.strip())
     for name, expected in [("PR_202501_AMB_DET_sample.csv", [10, 7, 3, 0, 0]),
                            ("PR_202501_AMB_DET_sample_rejeitado.csv", [10, 6, 3, 1, 0])]:
         result = run([app, ROOT / "data/sample" / name, CATALOG])
@@ -108,11 +126,11 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         require(len(executions) == 2, "Reexecucao deve preservar o historico")
         # A TUSS 20 e carregada automaticamente junto com a TUSS 22.
         require(
-            executions[0][1:9] == ("202501", "202501", "22,20", 10, 7, 3, 0, 0),
+            executions[0][1:9] == ("202501", "202501", "22,20,19", 10, 7, 3, 0, 0),
             f"Metadados/resumo positivo divergentes: {executions[0][1:9]}"
         )
         require(
-            executions[1][1:9] == ("202501", "202501", "22,20", 10, 6, 3, 1, 0),
+            executions[1][1:9] == ("202501", "202501", "22,20,19", 10, 6, 3, 1, 0),
             f"Metadados/resumo negativo divergentes: {executions[1][1:9]}"
         )
         require(all(row[-1] for row in executions), "Execucao sem encerramento")
@@ -189,7 +207,7 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         check_counts(run([app, source, CATALOG, both_database, GROUPS]).stdout, expected)
     with closing(sqlite3.connect(both_database)) as db, db:
         require(db.execute("SELECT tabela_catalogo,total,validos,alertas,rejeitados FROM auditoria_execucao ORDER BY id").fetchall()
-                == [("22,20,63", 10, 10, 0, 0), ("22,20,63", 10, 9, 0, 1)], "Resumo/referencias TUSS 20, 22 e 63")
+                == [("22,20,63,19", 10, 10, 0, 0), ("22,20,63,19", 10, 9, 0, 1)], "Resumo/referencias TUSS 19, 20, 22 e 63")
         require(db.execute("SELECT COUNT(*) FROM auditoria_ocorrencia WHERE tipo='ALERTA'").fetchone()[0] == 0,
                 "Grupos da amostra ainda geraram alerta")
         require(db.execute("SELECT DISTINCT cd_procedimento FROM auditoria_resultado WHERE cd_tabela_referencia='63' ORDER BY cd_procedimento").fetchall()

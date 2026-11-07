@@ -31,7 +31,7 @@ Para quantidade, o tamanho 6 do dicionario nao esclarece uma escala fixa. O limi
 
 A documentacao explica que componentes de pacotes podem vir sem quantidade e valores, e que novos campos podem nao estar presentes em todos os eventos. Por isso, esta etapa preserva a aceitacao de vazios de quantidade, valores, unidade e indicadores. Nao usa apenas IND_PACOTE para presumir toda a obrigatoriedade: o contexto completo deve ser estabelecido.
 
-Pendentes: obrigatoriedade condicional, consulta ao dominio TUSS 60, cobertura dos catalogos 19/20, revisao das regras de sinais/faixas conforme a origem, aplicabilidade aos contratos historicos e confronto com a massa completa. Nao se deve rejeitar uma linha apenas por faltar um catalogo que o Core nao carregou.
+Pendentes: obrigatoriedade condicional, consulta ao dominio TUSS 60, revisao das regras de sinais/faixas conforme a origem, aplicabilidade aos contratos historicos e confronto com a massa completa. Os catalogos TUSS 19, 20, 22 e 63 sao carregados pelo Core. Um codigo TUSS ausente do snapshot continua gerando alerta, nao rejeicao.
 
 ## Testes e explicacao para a sabatina
 

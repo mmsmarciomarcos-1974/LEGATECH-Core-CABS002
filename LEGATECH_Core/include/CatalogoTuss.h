@@ -2,6 +2,7 @@
 #define CATALOGOTUSS_H
 
 #include <chrono>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -11,6 +12,7 @@ struct ReferenciaCatalogoTuss
 {
     std::string caminho;
     std::string tabela;
+    std::size_t registrosEsperados = 0;
 };
 
 struct TermoTuss

@@ -1,0 +1,73 @@
+{
+  "catalog_version": "202501",
+  "table": "19",
+  "schema": "cd_procedimento;inicio_vigencia;fim_vigencia",
+  "delimiter": ";",
+  "encoding": "UTF-8",
+  "records": 1292182,
+  "unique_codes": 1292182,
+  "code_lengths": [
+    8,
+    9
+  ],
+  "source_archive": "Padrao_TISS_Representacao_de_Conceitos_em_Saude_202501.zip",
+  "source_zip_sha256": "e4f7ee54d0e06c6c7f5a3374fb8cd8bedd67069e6c44f1d05b03a89298f30275",
+  "source_workbooks": [
+    {
+      "file": "TUSS 19 - materiais e OPME - VERSÃO 202501_PARTE_1.xlsx",
+      "sha256": "83137a59bc54c4e9ac7f8cea1d77fa8c51cc4ffaabdc69149496affcab5580e6"
+    },
+    {
+      "file": "TUSS 19 - materiais e OPME - VERSÃO 202501_PARTE_2.xlsx",
+      "sha256": "ec7d14026bc23c0cbcddff6b216f30ea4d224e397afebd287fe8a2f8efb8fa6a"
+    }
+  ],
+  "parts": [
+    {
+      "file": "tuss19_202501_part01.csv",
+      "records": 184598,
+      "bytes": 3876603,
+      "sha256": "14c08aa2c34d12fd120e6d84145e0a6a9df26b75023732b8bc8bf86a447ae760"
+    },
+    {
+      "file": "tuss19_202501_part02.csv",
+      "records": 184598,
+      "bytes": 3876603,
+      "sha256": "037dbae92097d5fb9eb39e0b716c77ffd5b240c3a3e694d611942b2a1cd3bafb"
+    },
+    {
+      "file": "tuss19_202501_part03.csv",
+      "records": 184598,
+      "bytes": 3876603,
+      "sha256": "85d1ed2ba9e7d4ae4c5bd797c4c953298262f47fdd0981f8c730b1808ac33d8a"
+    },
+    {
+      "file": "tuss19_202501_part04.csv",
+      "records": 184598,
+      "bytes": 3876603,
+      "sha256": "a4b07e89136c3ce31e208dde4ad09f621aad77f3c993cb0bee3473dfdf557d26"
+    },
+    {
+      "file": "tuss19_202501_part05.csv",
+      "records": 184598,
+      "bytes": 3890336,
+      "sha256": "5f3d61c4868e612cc15d11f080a4e879f54e4592f66f8a8e3cf3c9cf1bab0283"
+    },
+    {
+      "file": "tuss19_202501_part06.csv",
+      "records": 184598,
+      "bytes": 4060823,
+      "sha256": "ddaae443faa022b6e35b0de352cf248e1ed6230f400dda3c8fad28b554f3d566"
+    },
+    {
+      "file": "tuss19_202501_part07.csv",
+      "records": 184594,
+      "bytes": 4061108,
+      "sha256": "013a15cd85c61944d3446e863fda8856c44f15a4c0e8e5d1d6a29adb64c2c905"
+    }
+  ],
+  "code_length_counts": {
+    "8": 909640,
+    "9": 382542
+  }
+}

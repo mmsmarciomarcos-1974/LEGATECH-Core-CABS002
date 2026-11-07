@@ -14,6 +14,10 @@ Disciplina: CABS002 - Programação Avançada
 
 A carga conjunta opcional e os comandos de validação no Windows estão em [CATALOGOS_TUSS22_63.md](CATALOGOS_TUSS22_63.md). A tabela 63 usa uma referência externa versionada com 31 grupos, conferida no pacote oficial 202501.
 
+### Catálogo TUSS 19
+
+A referência oficial 202501, a normalização das duas planilhas e a carga automática das sete partes estão descritas em [CATALOGO_TUSS19.md](CATALOGO_TUSS19.md). O catálogo normalizado contém código e datas de vigência, sem as descrições extensas das planilhas originais.
+
 ## Entrada CSV e SQLite por DAO
 
 O executável aceita as duas fontes e chama `processarArquivo()` por um ponteiro de `DAOEntrada`. Comandos, formato relacional e explicação para a sabatina: [ENTRADA_DAO.md](ENTRADA_DAO.md).

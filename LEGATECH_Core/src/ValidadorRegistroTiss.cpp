@@ -491,12 +491,12 @@ ValidadorRegistroTiss::validar(
         // A existencia real do codigo na TUSS
         // sera validada na proxima etapa.
 
-        if (tabelaTussSuportada(
-                tabelaReferencia
-            ) &&
-            !possuiSomenteDigitos(
-                procedimento
-            ))
+        const bool formatoCodigoTussValido = tabelaReferencia == "19"
+            ? possuiSomenteDigitos(procedimento) &&
+              (procedimento.size() == 8 || procedimento.size() == 9)
+            : possuiSomenteDigitos(procedimento);
+
+        if (tabelaTussSuportada(tabelaReferencia) && !formatoCodigoTussValido)
         {
             resultado.adicionarMotivo(
                 "CD_PROCEDIMENTO: "

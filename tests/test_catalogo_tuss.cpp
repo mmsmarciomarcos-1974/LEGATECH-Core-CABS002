@@ -28,7 +28,7 @@ RegistroTissBruto registro(const std::string& codigo, const std::string& tabela 
 int main(int argc, char* argv[])
 try
 {
-    exigir(argc == 3, "caminhos dos catalogos 22 e 63");
+    exigir(argc == 4, "caminhos dos catalogos 22, 63 e diretorio TUSS 19");
     CatalogoTuss catalogo(argv[1], "202501", "22");
     exigir(catalogo.tamanho() == 5964, "carga integral");
     exigir(catalogo.consultar("19", "10101012") == nullptr, "par isolado por tabela");
@@ -36,6 +36,34 @@ try
     exigir(ambos.tamanho() == 5995, "carga integral das duas tabelas");
     exigir(ambos.contemTabela("22") && ambos.contemTabela("63") && !ambos.contemTabela("19"), "tabelas carregadas");
     exigir(ambos.getTabela() == "22,63", "referencias para auditoria");
+    const std::vector<std::size_t> registrosTuss19PorParte{
+        184598, 184598, 184598, 184598, 184598, 184598, 184594
+    };
+    std::vector<ReferenciaCatalogoTuss> referenciasTuss19;
+    for (std::size_t i = 0; i < registrosTuss19PorParte.size(); ++i)
+    {
+        const std::string parte = i + 1 < 10 ? "0" + std::to_string(i + 1) : std::to_string(i + 1);
+        referenciasTuss19.push_back({
+            (std::filesystem::path(argv[3]) / ("tuss19_202501_part" + parte + ".csv")).string(),
+            "19",
+            registrosTuss19PorParte[i]
+        });
+    }
+    CatalogoTuss tuss19(referenciasTuss19, "202501");
+    exigir(tuss19.tamanho() == 1292182, "carga integral TUSS 19 em sete partes");
+    exigir(tuss19.contemTabela("19") && tuss19.getTabela() == "19", "TUSS 19 identificada sem duplicar a tabela");
+    const TermoTuss* termo19 = tuss19.consultar("19", "71786074");
+    exigir(termo19 && termo19->inicioVigencia == std::chrono::sys_days{std::chrono::year{2017}/4/10},
+           "consulta TUSS 19 e vigencia do snapshot");
+    ValidadorRegistroTiss validarTuss19(&tuss19);
+    exigir(validarTuss19.validar(registro("71786074", "19")).getEstado() == EstadoValidacao::VALIDO,
+           "codigo TUSS 19 localizado e vigente");
+    exigir(validarTuss19.validar(registro("00000000", "19")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA,
+           "codigo ausente na TUSS 19 gera alerta, nao rejeicao");
+    exigir(validarTuss19.validar(registro("1234567", "19")).getEstado() == EstadoValidacao::REJEITADO,
+           "codigo TUSS 19 com sete digitos rejeitado");
+    exigir(validarTuss19.validar(registro("1234567890", "19")).getEstado() == EstadoValidacao::REJEITADO,
+           "codigo TUSS 19 com dez digitos rejeitado");
     ValidadorRegistroTiss comGrupos(&ambos);
     exigir(comGrupos.validar(registro("018", "63")).getEstado() == EstadoValidacao::VALIDO, "grupo vigente com zeros");
     exigir(comGrupos.validar(registro("004", "63")).getEstado() == EstadoValidacao::VALIDO, "segundo grupo vigente");

@@ -88,12 +88,17 @@ CatalogoTuss::CatalogoTuss(const std::vector<ReferenciaCatalogoTuss>& referencia
         throw std::runtime_error("Catalogo TUSS: versao/tabela nao informadas");
     for (const auto& referencia : referencias)
     {
-        if (!digitos(referencia.tabela) || contemTabela(referencia.tabela))
+        const bool tabelaJaCarregada = contemTabela(referencia.tabela);
+        if (!digitos(referencia.tabela) ||
+            (tabelaJaCarregada && referencia.tabela != "19"))
             throw std::runtime_error("Catalogo TUSS: tabela invalida ou repetida");
         carregar(referencia);
-        tabelas.push_back(referencia.tabela);
-        if (!tabela.empty()) tabela += ',';
-        tabela += referencia.tabela;
+        if (!tabelaJaCarregada)
+        {
+            tabelas.push_back(referencia.tabela);
+            if (!tabela.empty()) tabela += ',';
+            tabela += referencia.tabela;
+        }
     }
 }
 
@@ -105,26 +110,46 @@ void CatalogoTuss::carregar(const ReferenciaCatalogoTuss& referencia)
     std::ifstream entrada(caminho, std::ios::binary);
     if (!entrada) throw std::runtime_error("Nao foi possivel abrir catalogo TUSS: " + caminho);
     std::vector<std::string> campos;
-    const std::vector<std::string> cabecalho{
+    const std::vector<std::string> cabecalhoCompleto{
         "versao_catalogo", "cd_tabela_referencia", "cd_procedimento", "termo",
         "descricao_detalhada", "inicio_vigencia", "fim_vigencia", "fim_implantacao"};
+    const std::vector<std::string> cabecalhoTuss19{
+        "cd_procedimento", "inicio_vigencia", "fim_vigencia"};
     if (!lerLinhaCsv(entrada, campos)) throw std::runtime_error("Catalogo TUSS vazio");
     if (campos[0].starts_with("\xEF\xBB\xBF")) campos[0].erase(0, 3);
-    if (campos != cabecalho) throw std::runtime_error("Cabecalho do catalogo TUSS divergente");
+    const bool formatoCompactoTuss19 = tabelaEsperada == "19" && campos == cabecalhoTuss19;
+    if (!formatoCompactoTuss19 && campos != cabecalhoCompleto)
+        throw std::runtime_error("Cabecalho do catalogo TUSS divergente");
+    std::size_t registrosCarregados = 0;
     while (lerLinhaCsv(entrada, campos))
     {
-        if (campos.size() != 8 || campos[0] != versao || campos[1] != tabelaEsperada ||
-            !digitos(campos[2]) || (tabelaEsperada == "22" && campos[2].size() != 8) ||
-            (tabelaEsperada == "63" && campos[2].size() != 3))
+        const std::size_t indiceCodigo = formatoCompactoTuss19 ? 0 : 2;
+        const std::size_t indiceInicio = formatoCompactoTuss19 ? 1 : 5;
+        const std::size_t indiceFim = formatoCompactoTuss19 ? 2 : 6;
+        const bool estruturaValida = formatoCompactoTuss19
+            ? campos.size() == 3
+            : campos.size() == 8 && campos[0] == versao && campos[1] == tabelaEsperada;
+        if (!estruturaValida)
             throw std::runtime_error("Registro do catalogo TUSS divergente");
-        TermoTuss termo{dataIso(campos[5]), std::nullopt};
-        if (!campos[6].empty()) termo.fimVigencia = dataIso(campos[6]);
-        if (!campos[7].empty()) (void)dataIso(campos[7]);
+        const std::string& codigo = campos[indiceCodigo];
+        const bool formatoCodigoValido = digitos(codigo) &&
+            (tabelaEsperada != "22" || codigo.size() == 8) &&
+            (tabelaEsperada != "63" || codigo.size() == 3) &&
+            (tabelaEsperada != "19" || (codigo.size() == 8 || codigo.size() == 9));
+        if (!formatoCodigoValido)
+            throw std::runtime_error("Registro do catalogo TUSS divergente");
+        TermoTuss termo{dataIso(campos[indiceInicio]), std::nullopt};
+        if (!campos[indiceFim].empty()) termo.fimVigencia = dataIso(campos[indiceFim]);
+        if (!formatoCompactoTuss19 && !campos[7].empty()) (void)dataIso(campos[7]);
         if (termo.fimVigencia && *termo.fimVigencia < termo.inicioVigencia)
             throw std::runtime_error("Catalogo TUSS: intervalo invertido");
-        if (!termos.emplace(tabelaEsperada + ':' + campos[2], termo).second)
-            throw std::runtime_error("Catalogo TUSS: codigo duplicado " + campos[2]);
+        if (!termos.emplace(tabelaEsperada + ':' + codigo, termo).second)
+            throw std::runtime_error("Catalogo TUSS: codigo duplicado " + codigo);
+        ++registrosCarregados;
     }
+    if (registrosCarregados == 0) throw std::runtime_error("Catalogo TUSS sem termos");
+    if (referencia.registrosEsperados != 0 && registrosCarregados != referencia.registrosEsperados)
+        throw std::runtime_error("Catalogo TUSS: quantidade de registros divergente em " + caminho);
     if (termos.size() == tamanhoAnterior) throw std::runtime_error("Catalogo TUSS sem termos");
 }
 
