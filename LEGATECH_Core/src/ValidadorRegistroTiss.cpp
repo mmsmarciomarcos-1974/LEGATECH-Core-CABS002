@@ -580,6 +580,10 @@ ValidadorRegistroTiss::validar(
     const std::string& quantidade =
         registro.getQtItemEventoInformado();
 
+    // AMB_DET e um extrato tabular, nao uma mensagem TISS completa.
+    // O dicionario informa NUMBER com tamanho 6, sem escala nem
+    // obrigatoriedade; preservamos vazio e aceitamos decimais ate seis
+    // digitos de precisao total, sem inferir regras de uma guia especifica.
     if (!quantidade.empty() &&
         !possuiFormatoDecimalValido(quantidade))
     {
