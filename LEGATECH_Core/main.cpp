@@ -40,6 +40,28 @@ std::string resolverCaminhoTuss20()
         "Nao foi possivel localizar data/reference/tuss20_202501.csv.");
 }
 
+std::string resolverCaminhoTuss60()
+{
+    const std::filesystem::path relativo =
+        std::filesystem::path("data") / "reference" / "tuss60_202501" / "tuss60_202501.csv";
+    std::filesystem::path base = std::filesystem::current_path();
+
+    while (true)
+    {
+        const auto candidato = base / relativo;
+        if (std::filesystem::is_regular_file(candidato))
+            return std::filesystem::absolute(candidato).string();
+
+        const auto pai = base.parent_path();
+        if (pai == base)
+            break;
+        base = pai;
+    }
+
+    throw std::runtime_error(
+        "Nao foi possivel localizar data/reference/tuss60_202501/tuss60_202501.csv.");
+}
+
 std::vector<ReferenciaCatalogoTuss> resolverReferenciasTuss19()
 {
     const std::filesystem::path relativo =
@@ -105,7 +127,8 @@ try
             throw std::runtime_error("Competencia SQLite deve usar AAAAMM com ano e mes validos");
         std::vector<ReferenciaCatalogoTuss> refs{
             {argv[4], "22"},
-	    {resolverCaminhoTuss20(), "20"}
+            {resolverCaminhoTuss20(), "20"},
+            {resolverCaminhoTuss60(), "60"}
         };
         if (argc == 6) refs.push_back({argv[5], "63"});
         const auto referenciasTuss19 = resolverReferenciasTuss19();
@@ -131,7 +154,8 @@ try
     // Carregado uma vez; falha de referencia interrompe antes de ler a massa.
     std::vector<ReferenciaCatalogoTuss> referencias{
         {argc > 2 ? argv[2] : "../data/reference/tuss22_202501.csv", "22"},
-        {resolverCaminhoTuss20(), "20"}
+        {resolverCaminhoTuss20(), "20"},
+        {resolverCaminhoTuss60(), "60"}
     };
     if (!pastaExportacao.empty() && argc == 4) referencias.push_back({argv[3], "63"});
     else if (argc > 4) referencias.push_back({argv[4], "63"});

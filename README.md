@@ -16,7 +16,7 @@ A carga conjunta opcional e os comandos de validação no Windows estão em [CAT
 
 ### Catálogo TUSS 19
 
-A referência oficial 202501, a normalização das duas planilhas e a carga automática das sete partes estão descritas em [CATALOGO_TUSS19.md](CATALOGO_TUSS19.md). O catálogo normalizado contém código e datas de vigência, sem as descrições extensas das planilhas originais.
+A referência oficial 202501, a normalização das duas planilhas e a carga automática das sete partes estão descritas em [CATALOGO_TUSS19.md](CATALOGO_TUSS19.md). O catálogo normalizado contém código e datas de vigência, sem as descrições extensas das planilhas originais. A TUSS 60 de unidade de medida e sua normalização estão documentadas em [CATALOGO_TUSS60.md](CATALOGO_TUSS60.md).
 
 ## Entrada CSV e SQLite por DAO
 
@@ -53,4 +53,4 @@ Em 02/11/2026, o projeto foi executado pelo Code::Blocks, na configuração Rele
 
 Nos dois ambientes, a exportação foi confirmada em `../data/output/saida_codeblocks`. Esta evidência demonstra a compilação/execução e a resolução dos caminhos relativos com a massa controlada; não representa benchmark nem validação de processamento em escala.
 
-A origem e a normalização da TUSS 20 estão descritas em [CATALOGO_TUSS20.md](CATALOGO_TUSS20.md).
+A origem e a normalização das TUSS 20 e 60 estão descritas em [CATALOGO_TUSS20.md](CATALOGO_TUSS20.md) e [CATALOGO_TUSS60.md](CATALOGO_TUSS60.md).

@@ -719,21 +719,73 @@ ValidadorRegistroTiss::validar(
     if (idEvento.size() > 30)
         resultado.adicionarMotivo("ID_EVENTO_ATENCAO_SAUDE: tamanho excede 30 digitos");
     // =================================================
-    // REGRA 11 - UNIDADE_MEDIDA
+    // REGRA 11 - UNIDADE_MEDIDA (TUSS 60)
     // =================================================
-    //
-    // Nesta etapa nao aplicamos obrigatoriedade,
-    // formato ou dominio.
-    //
-    // O campo aparece vazio em registros reais da massa.
-    // A regra sera incorporada posteriormente com base
-    // no Dicionario TISS correspondente ao periodo.
-    //
-
-    // =================================================
-    // Limite documentado; obrigatoriedade e dominio TUSS 60 seguem pendentes.
-    if (tamanhoTexto(registro.getUnidadeMedida()) > 40)
+    const std::string& unidadeMedida = registro.getUnidadeMedida();
+    if (tamanhoTexto(unidadeMedida) > 40)
         resultado.adicionarMotivo("UNIDADE_MEDIDA: tamanho excede 40 caracteres");
+
+    // O campo e condicional: o extrato AMB_DET nao informa se cada item
+    // exige unidade. Quando preenchido, o codigo deve pertencer a TUSS 60.
+    if (!unidadeMedida.empty())
+    {
+        if (unidadeMedida.size() != 3 || !possuiSomenteDigitos(unidadeMedida))
+        {
+            resultado.adicionarMotivo(
+                "UNIDADE_MEDIDA: formato invalido, esperado codigo TUSS 60 de 3 digitos"
+            );
+        }
+        else if (!catalogo || !catalogo->contemTabela("60"))
+        {
+            resultado.adicionarAlerta(
+                "CATALOGO_NAO_CARREGADO: tabela TUSS 60"
+            );
+        }
+        else
+        {
+            const std::string referencia =
+                " [TUSS " + catalogo->getVersao() + ", tabela 60, unidade " +
+                unidadeMedida + "]";
+            const TermoTuss* termo = catalogo->consultar("60", unidadeMedida);
+            if (!termo)
+            {
+                resultado.adicionarMotivo(
+                    "UNIDADE_MEDIDA: codigo fora do dominio TUSS 60" + referencia
+                );
+            }
+            else if (validarFormatoAnoMes(data))
+            {
+                using namespace std::chrono;
+                const year_month mes{
+                    year{std::stoi(data.substr(0, 4))},
+                    month{static_cast<unsigned>(std::stoi(data.substr(5, 2)))}
+                };
+                const sys_days primeiro{mes / day{1}};
+                const sys_days ultimo{mes / last};
+                if (termo->inicioVigencia > ultimo ||
+                    (termo->fimVigencia && *termo->fimVigencia < primeiro))
+                {
+                    resultado.adicionarMotivo(
+                        "UNIDADE_MEDIDA_FORA_DA_VIGENCIA: mes " + data + referencia
+                    );
+                }
+                else if (termo->inicioVigencia > primeiro ||
+                         (termo->fimVigencia && *termo->fimVigencia <= ultimo))
+                {
+                    resultado.adicionarAlerta(
+                        "VIGENCIA_PARCIAL_NO_MES: dia do atendimento necessario" +
+                        referencia
+                    );
+                }
+            }
+            else
+            {
+                resultado.adicionarAlerta(
+                    "VIGENCIA_NAO_VERIFICADA: periodo indisponivel" + referencia
+                );
+            }
+        }
+    }
 
     // RESULTADO FINAL
     // =================================================

@@ -135,6 +135,7 @@ void CatalogoTuss::carregar(const ReferenciaCatalogoTuss& referencia)
         const bool formatoCodigoValido = digitos(codigo) &&
             (tabelaEsperada != "22" || codigo.size() == 8) &&
             (tabelaEsperada != "63" || codigo.size() == 3) &&
+            (tabelaEsperada != "60" || codigo.size() == 3) &&
             (tabelaEsperada != "19" || (codigo.size() == 8 || codigo.size() == 9));
         if (!formatoCodigoValido)
             throw std::runtime_error("Registro do catalogo TUSS divergente");

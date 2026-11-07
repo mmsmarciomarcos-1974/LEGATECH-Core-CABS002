@@ -21,7 +21,7 @@ O indice oficial informa atualizacao em 25/08/2026. Essa consulta nao comprova q
 | QT_ITEM_EVENTO_INFORMADO | NUMBER, tamanho 6 | Ate seis digitos de precisao, mantendo decimais sem presumir escala fixa |
 | VL_ITEM_EVENTO_INFORMADO | NUMBER, tamanho 18,2 | Obrigatorio, exceto componente de pacote; nao negativo; ate 16 digitos inteiros e duas casas decimais |
 | VL_ITEM_PAGO_FORNECEDOR | NUMBER, tamanho 18,2 | Obrigatorio, exceto componente de pacote; zero sem pagamento; negativo permitido para estorno, com alerta |
-| UNIDADE_MEDIDA | VARCHAR2(40), referencia TUSS 60 | Ate 40 caracteres; dominio ainda pendente |
+| UNIDADE_MEDIDA | VARCHAR2(40), referencia TUSS 60 | Opcional no extrato; quando preenchida, ate 40 caracteres e codigo TUSS 60 numerico de tres digitos, validado por dominio e vigencia |
 
 O formato decimal exige digitos antes e depois do separador quando ele existe. Aceita ponto ou virgula, nunca ambos nem mais de um separador. Recusa `.5`, `5.`, notacao cientifica e NaN. Sinais sao recusados, exceto o sinal negativo de `VL_ITEM_PAGO_FORNECEDOR`, que pode representar estorno. Nao aplica agrupamento de milhares, conversao binaria ou arredondamento silencioso. Zeros iniciais sao preservados, mas nao aumentam a precisao numerica. O limite textual conta caracteres UTF-8 em entradas bem formadas; nao constitui validacao completa de codificacao UTF-8.
 
@@ -53,9 +53,9 @@ A ANS define `00` como tabela propria das operadoras e `90`/`98` como tabelas pr
 
 ## Vazios e pendencias
 
-A aceitacao de campo vazio no extrato segue a regra especifica de cada campo: quantidade, unidade e indicadores permanecem opcionais nesta validacao, exceto quando a referencia permite verificar uma combinacao obrigatoria (`00` exige tabela propria e `90`/`98` exigem pacote); os valores do item sao obrigatorios, exceto em componente de pacote identificado por `IND_PACOTE=1`. Valor negativo e aceito apenas em `VL_ITEM_PAGO_FORNECEDOR`, com alerta para verificacao do estorno e do saldo da guia.
+A aceitacao de campo vazio no extrato segue a regra especifica de cada campo: quantidade, unidade e indicadores permanecem opcionais nesta validacao, exceto quando a referencia permite verificar uma combinacao obrigatoria (`00` exige tabela propria e `90`/`98` exigem pacote); os valores do item sao obrigatorios, exceto em componente de pacote identificado por `IND_PACOTE=1`. O [guia ANS do componente de utilizacao](https://fhir-hm.ans.gov.br/componente_itens_assistenciais.html) define unidade como condicional, preenchida quando o item cobrado possui unidade; o extrato `AMB_DET`, isoladamente, nao permite decidir essa condicao por item. Unidade preenchida deve pertencer a TUSS 60 da competencia 202501 e ser vigente na data do evento. Valor negativo e aceito apenas em `VL_ITEM_PAGO_FORNECEDOR`, com alerta para verificacao do estorno e do saldo da guia.
 
-Pendentes: obrigatoriedade condicional dos demais campos, consulta ao dominio TUSS 60, consistencias entre itens da mesma guia, aplicabilidade historica e confronto com a massa completa. Para `QT_ITEM_EVENTO_INFORMADO` e os dois valores do item, as regras locais do extrato estao documentadas acima; a validacao integral de mensagens/guias continua fora deste escopo. Os catalogos TUSS 19, 20, 22 e 63 sao carregados pelo Core. Um codigo TUSS ausente do snapshot continua gerando alerta, nao rejeicao.
+Pendentes: obrigatoriedade condicional dos demais campos, consistencias entre itens da mesma guia, aplicabilidade historica e confronto com a massa completa. Para `QT_ITEM_EVENTO_INFORMADO` e os dois valores do item, as regras locais do extrato estao documentadas acima; a validacao integral de mensagens/guias continua fora deste escopo. Os catalogos TUSS 19, 20, 22, 60 e 63 sao carregados pelo Core. Codigo de procedimento ausente dos snapshots 19/20/22/63 continua gerando alerta, nao rejeicao; para a TUSS 60, a referencia 202501 contem os 61 codigos unicos, e um codigo preenchido ausente dessa tabela e rejeitado.
 
 ## Testes e explicacao para a sabatina
 

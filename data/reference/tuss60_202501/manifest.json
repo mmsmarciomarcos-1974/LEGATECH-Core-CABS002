@@ -1,0 +1,21 @@
+{
+  "catalog_version": "202501",
+  "table": "60",
+  "table_name": "Tabela 60 - Terminologia de unidade de medida",
+  "schema": "versao_catalogo;cd_tabela_referencia;cd_procedimento;termo;descricao_detalhada;inicio_vigencia;fim_vigencia;fim_implantacao",
+  "delimiter": ";",
+  "encoding": "UTF-8",
+  "records": 61,
+  "unique_codes": 61,
+  "code_length": 3,
+  "source_archive": "Padrao_TISS_Representacao_de_Conceitos_em_Saude_202501.zip",
+  "source_zip_sha256": "e4f7ee54d0e06c6c7f5a3374fb8cd8bedd67069e6c44f1d05b03a89298f30275",
+  "source_workbook": "TUSS - Demais terminologias - VERSÃO 202501.xlsx",
+  "source_workbook_sha256": "2608c3a4002b815c29a8e3ecfa15e91e045a10d11d5aa998e8899738927a0978",
+  "source_sheet": "Tab 60",
+  "source_header_row": 6,
+  "source_data_first_row": 7,
+  "output_file": "tuss60_202501.csv",
+  "output_bytes": 3346,
+  "output_sha256": "ede125bdf343892fffaa66baded333fc34a89bf8b818d1c909ae1e593caa7640"
+}
