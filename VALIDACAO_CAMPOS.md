@@ -19,11 +19,11 @@ O indice oficial informa atualizacao em 25/08/2026. Essa consulta nao comprova q
 | CD_PROCEDIMENTO | VARCHAR2(40) | Ate 40 caracteres; consulta ao par TUSS anterior preservada |
 | CD_TABELA_REFERENCIA | VARCHAR2(40) | Ate 40 caracteres; dominio anterior preservado |
 | QT_ITEM_EVENTO_INFORMADO | NUMBER, tamanho 6 | Ate seis digitos de precisao, mantendo decimais sem presumir escala fixa |
-| VL_ITEM_EVENTO_INFORMADO | NUMBER, tamanho 18,2 | Ate 16 digitos inteiros e duas casas decimais |
-| VL_ITEM_PAGO_FORNECEDOR | NUMBER, tamanho 18,2 | Ate 16 digitos inteiros e duas casas decimais |
+| VL_ITEM_EVENTO_INFORMADO | NUMBER, tamanho 18,2 | Obrigatorio, exceto componente de pacote; nao negativo; ate 16 digitos inteiros e duas casas decimais |
+| VL_ITEM_PAGO_FORNECEDOR | NUMBER, tamanho 18,2 | Obrigatorio, exceto componente de pacote; zero sem pagamento; negativo permitido para estorno, com alerta |
 | UNIDADE_MEDIDA | VARCHAR2(40), referencia TUSS 60 | Ate 40 caracteres; dominio ainda pendente |
 
-O formato decimal exige digitos antes e depois do separador quando ele existe. Aceita ponto ou virgula, nunca ambos nem mais de um separador. Recusa `.5`, `5.`, notacao cientifica, NaN e sinais; a restricao de sinais ja existia. Nao aplica agrupamento de milhares, conversao binaria ou arredondamento silencioso. Zeros iniciais sao preservados, mas nao aumentam a precisao numerica. O limite textual conta caracteres UTF-8 em entradas bem formadas; nao constitui validacao completa de codificacao UTF-8.
+O formato decimal exige digitos antes e depois do separador quando ele existe. Aceita ponto ou virgula, nunca ambos nem mais de um separador. Recusa `.5`, `5.`, notacao cientifica e NaN. Sinais sao recusados, exceto o sinal negativo de `VL_ITEM_PAGO_FORNECEDOR`, que pode representar estorno. Nao aplica agrupamento de milhares, conversao binaria ou arredondamento silencioso. Zeros iniciais sao preservados, mas nao aumentam a precisao numerica. O limite textual conta caracteres UTF-8 em entradas bem formadas; nao constitui validacao completa de codificacao UTF-8.
 
 ### Regra fechada para `QT_ITEM_EVENTO_INFORMADO`
 
@@ -33,11 +33,17 @@ Quando preenchido, o valor deve ser decimal nao negativo com no maximo seis digi
 
 As mensagens TISS podem definir obrigatoriedade, tipo ou faixa diferentes para campos semanticamente relacionados conforme o componente e a guia. Por exemplo, o [modelo ANS do componente de utilizacao publicado em 2023](https://fhir-hm.ans.gov.br/componente_itens_assistenciais.html) declara quantidade inteira obrigatoria e maior que zero naquele caso de uso. Essa regra nao e transferida ao `AMB_DET` sem prova de equivalencia entre os campos e contextos. A validacao de mensagens/guias fica fora do escopo desta regra.
 
+### Regras fechadas para os valores do item
+
+Para os campos do item do extrato `AMB_DET`, a semantica dos nomes corresponde aos campos de valor por item das guias TISS. O [modelo ANS de SPSADT, baseado no CCE 202207 e publicado no guia 202309](https://fhir-hm.ans.gov.br/guia_spsadt.html), define `Valor informado de procedimentos ou itens assistenciais` como obrigatorio e maior ou igual a zero. Define `Valor pago diretamente ao fornecedor` como obrigatorio; quando nao houver pagamento, deve ser informado zero. O [Componente Organizacional da ANS](https://www.gov.br/ans/pt-br/arquivos/assuntos/prestadores/padrao-para-troca-de-informacao-de-saude-suplementar-tiss/padrao-tiss/PadroTISS_ComponenteOrganizacional_202203.pdf), no exemplo de envio de pacotes (Quadro 18), mostra componentes com valores informados vazios. No Core, esses vazios sao aceitos quando `IND_PACOTE=1`, que identifica o contexto de componente de pacote no extrato; fora dele, os dois valores sao obrigatorios.
+
+A precisao vem do dicionario do extrato (`NUMBER(18,2)`): ate 16 digitos inteiros e duas casas decimais. Zero e valido para ambos os campos. Valor informado negativo e rejeitado. A regra 234 do Componente Organizacional da ANS permite valor negativo no campo pago para registrar estorno, desde que a soma dos valores pagos do item ou da guia nao fique negativa. A regra nao nomeia especificamente o campo de pagamento direto ao fornecedor; por isso, aceitar sinal negativo em `VL_ITEM_PAGO_FORNECEDOR` e uma interpretacao conservadora dessa regra geral de estorno, marcada com alerta. O saldo acumulado e a justificativa do estorno nao podem ser confirmados em uma linha isolada. A validacao local tambem nao verifica somatorios ou igualdade entre lancamentos da mesma guia. O CCE 202207 e a referencia semantica consultada; nao declaramos conformidade integral de cada mensagem/guia ou de todas as versoes do TISS.
+
 ## Vazios e pendencias
 
-A aceitacao de campo vazio no extrato e baseada na ausencia de regra de obrigatoriedade no dicionario consultado; nao e inferida apenas de `IND_PACOTE`. A mesma cautela vale para valores, unidade e indicadores: o dicionario nao descreve por si so todas as condicoes de preenchimento das mensagens/guias de origem.
+A aceitacao de campo vazio no extrato segue a regra especifica de cada campo: quantidade, unidade e indicadores permanecem opcionais nesta validacao; os valores do item sao obrigatorios, exceto em componente de pacote identificado por `IND_PACOTE=1`. Valor negativo e aceito apenas em `VL_ITEM_PAGO_FORNECEDOR`, com alerta para verificacao do estorno e do saldo da guia.
 
-Pendentes: obrigatoriedade condicional dos demais campos, consulta ao dominio TUSS 60, aplicabilidade historica e confronto com a massa completa. Para `QT_ITEM_EVENTO_INFORMADO`, a regra do extrato `AMB_DET` esta fechada nos limites acima; regras de mensagens/guias continuam fora deste escopo. Os catalogos TUSS 19, 20, 22 e 63 sao carregados pelo Core. Um codigo TUSS ausente do snapshot continua gerando alerta, nao rejeicao.
+Pendentes: obrigatoriedade condicional dos demais campos, consulta ao dominio TUSS 60, consistencias entre itens da mesma guia, aplicabilidade historica e confronto com a massa completa. Para `QT_ITEM_EVENTO_INFORMADO` e os dois valores do item, as regras locais do extrato estao documentadas acima; a validacao integral de mensagens/guias continua fora deste escopo. Os catalogos TUSS 19, 20, 22 e 63 sao carregados pelo Core. Um codigo TUSS ausente do snapshot continua gerando alerta, nao rejeicao.
 
 ## Testes e explicacao para a sabatina
 

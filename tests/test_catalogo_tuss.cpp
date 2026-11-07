@@ -129,10 +129,12 @@ try
     // RF04: limites textuais e precisao sem conversao para ponto flutuante.
     auto avaliarCampos = [&](const std::string& id, const std::string& quantidade,
                              const std::string& informado, const std::string& pago,
-                             const std::string& unidade = "") {
+                             const std::string& unidade = "",
+                             const std::string& pacote = "0",
+                             const std::string& propria = "0") {
         return validarComCompetencia(
             RegistroTissBruto(id,"PR","2025-01","10101012","22",
-                              quantidade,informado,pago,unidade,"0","0"),
+                              quantidade,informado,pago,unidade,pacote,propria),
             "202501"
         );
     };
@@ -152,7 +154,12 @@ try
         exigir(temMotivo(avaliarCampos("1","1",valor,"0"),"VL_ITEM_EVENTO_INFORMADO"), "valor informado invalido");
         exigir(temMotivo(avaliarCampos("1","1","100",valor),"VL_ITEM_PAGO_FORNECEDOR"), "valor pago invalido");
     }
-    exigir(avaliarCampos("1","","","","").getEstado() == EstadoValidacao::VALIDO, "vazios preservados sem obrigatoriedade presumida");
+    const auto valoresVazios = avaliarCampos("1","1","","","");
+    exigir(temMotivo(valoresVazios,"VL_ITEM_EVENTO_INFORMADO") &&
+           temMotivo(valoresVazios,"VL_ITEM_PAGO_FORNECEDOR"),
+           "valores obrigatorios identificados quando vazios fora de pacote");
+    exigir(avaliarCampos("1","1","","","","1").getEstado() == EstadoValidacao::VALIDO,
+           "valores vazios permitidos em componente de pacote");
     exigir(avaliarCampos("1","1","000100,50","0",std::string(40,'A')).getEstado() == EstadoValidacao::VALIDO, "zeros e tamanho 40 preservados");
     exigir(temMotivo(avaliarCampos("1","1","100","0",std::string(41,'A')),"UNIDADE_MEDIDA"), "unidade acima de 40");
     exigir(validarSemHistorico(registro(std::string(40,'A'),"00","2025-01","0","1")).getEstado() == EstadoValidacao::VALIDO,
@@ -160,7 +167,7 @@ try
     exigir(temMotivo(validarSemHistorico(registro(std::string(41,'A'),"00","2025-01","0","1")),"CD_PROCEDIMENTO: tamanho"),
             "codigo proprio acima de 40");
     exigir(temMotivo(validarSemHistorico(registro("1",std::string(41,'9'))),"CD_TABELA_REFERENCIA: tamanho"), "tabela acima de 40");
-    std::cout << "OK: limites de campos, precisao decimal, fronteiras e vazios permitidos\n";
+    std::cout << "OK: limites de campos, precisao decimal, fronteiras e regras de campos vazios\n";
 
     const auto diretorio = std::filesystem::temp_directory_path() /
         ("legatech-tuss-test-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));

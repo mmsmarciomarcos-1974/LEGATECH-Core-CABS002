@@ -180,15 +180,18 @@ namespace
         return true;
     }
     // Analise textual: preserva precisao, sem double, arredondamento ou overflow.
-    bool possuiFormatoDecimalValido(const std::string& valor)
+    bool possuiFormatoDecimalValido(const std::string& valor,
+                                    bool permitirNegativo = false)
     {
         if (valor.empty()) return false;
+        const std::size_t inicio = permitirNegativo && valor.front() == '-' ? 1 : 0;
+        if (inicio == valor.size()) return false;
         bool separador = false;
-        for (std::size_t i = 0; i < valor.size(); ++i)
+        for (std::size_t i = inicio; i < valor.size(); ++i)
         {
             const char c = valor[i];
             if (c >= '0' && c <= '9') continue;
-            if ((c == ',' || c == '.') && !separador && i > 0 && i + 1 < valor.size())
+            if ((c == ',' || c == '.') && !separador && i > inicio && i + 1 < valor.size())
             { separador = true; continue; }
             return false;
         }
@@ -196,12 +199,13 @@ namespace
     }
 
     bool decimalDentroDoLimite(const std::string& valor, std::size_t precisao,
-                              std::size_t escalaMaxima)
+                              std::size_t escalaMaxima, bool permitirNegativo = false)
     {
+        const std::size_t inicio = permitirNegativo && !valor.empty() && valor.front() == '-' ? 1 : 0;
         const auto pos = valor.find_first_of(",.");
         const auto fimInteiro = pos == std::string::npos ? valor.size() : pos;
         const auto fracao = pos == std::string::npos ? 0 : valor.size() - pos - 1;
-        std::size_t primeiro = 0;
+        std::size_t primeiro = inicio;
         while (primeiro < fimInteiro && valor[primeiro] == '0') ++primeiro;
         const auto inteiros = fimInteiro - primeiro;
         // NUMBER(18,2): ate 16 digitos inteiros e 2 fracionarios.
@@ -603,9 +607,14 @@ ValidadorRegistroTiss::validar(
 
     const std::string& valorItemInformado =
         registro.getVlItemEventoInformado();
+    const bool componenteDePacote = indPacote == "1";
 
-    if (!valorItemInformado.empty() &&
-        !possuiFormatoDecimalValido(valorItemInformado))
+    if (valorItemInformado.empty() && !componenteDePacote)
+    {
+        resultado.adicionarMotivo(
+            "VL_ITEM_EVENTO_INFORMADO: campo obrigatorio nao informado");
+    }
+    else if (!valorItemInformado.empty() && !possuiFormatoDecimalValido(valorItemInformado))
     {
         resultado.adicionarMotivo(
             "VL_ITEM_EVENTO_INFORMADO: "
@@ -625,17 +634,30 @@ ValidadorRegistroTiss::validar(
     const std::string& valorPagoFornecedor =
         registro.getVlItemPagoFornecedor();
 
-    if (!valorPagoFornecedor.empty() &&
-        !possuiFormatoDecimalValido(valorPagoFornecedor))
+    // Componentes de pacote podem omitir valores. Sinal negativo e mantido
+    // como possivel estorno; sem os demais lancamentos, o saldo da guia nao
+    // pode ser confirmado e por isso o registro recebe alerta.
+    if (valorPagoFornecedor.empty() && !componenteDePacote)
+    {
+        resultado.adicionarMotivo(
+            "VL_ITEM_PAGO_FORNECEDOR: campo obrigatorio nao informado");
+    }
+    else if (!valorPagoFornecedor.empty() && !possuiFormatoDecimalValido(valorPagoFornecedor, true))
     {
         resultado.adicionarMotivo(
             "VL_ITEM_PAGO_FORNECEDOR: "
             "formato numerico invalido"
         );
     }
-    else if (!valorPagoFornecedor.empty() && !decimalDentroDoLimite(valorPagoFornecedor, 18, 2))
+    else if (!valorPagoFornecedor.empty() && !decimalDentroDoLimite(valorPagoFornecedor, 18, 2, true))
     {
         resultado.adicionarMotivo("VL_ITEM_PAGO_FORNECEDOR: limite de precisao excedido (18 digitos e ate 2 casas decimais)");
+    }
+    else if (!valorPagoFornecedor.empty() && valorPagoFornecedor.front() == '-')
+    {
+        resultado.adicionarAlerta(
+            "VL_ITEM_PAGO_FORNECEDOR: valor negativo permitido para estorno; "
+            "saldo acumulado da guia nao verificavel no extrato AMB_DET");
     }
 
     // =================================================
