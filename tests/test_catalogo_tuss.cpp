@@ -202,7 +202,9 @@ try
            "valores obrigatorios identificados quando vazios fora de pacote");
     exigir(avaliarCampos("1","1","","","","1").getEstado() == EstadoValidacao::VALIDO,
            "valores vazios permitidos em componente de pacote");
-    exigir(avaliarCampos("1","1","000100,50","0",std::string(40,'A')).getEstado() == EstadoValidacao::VALIDO, "zeros e tamanho 40 preservados");
+    exigir(temMotivo(avaliarCampos("1","1","000100,50","0",std::string(40,'A')),
+                     "UNIDADE_MEDIDA: formato invalido"),
+           "unidade de 40 caracteres deve obedecer ao dominio TUSS 60");
     exigir(temMotivo(avaliarCampos("1","1","100","0",std::string(41,'A')),"UNIDADE_MEDIDA"), "unidade acima de 40");
     exigir(validarSemHistorico(registro(std::string(40,'A'),"00","2025-01","0","1")).getEstado() == EstadoValidacao::VALIDO,
             "codigo proprio tamanho 40 aceito");
