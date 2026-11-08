@@ -118,6 +118,24 @@ No recorte analisado, os dados confirmam que as regras condicionais de pacote ex
 
 Este perfil não valida o resultado completo de processamento/exportação do Core, não mede tempo ou memória de execução do Core e não é benchmark. Também não cobre outras UFs, consistências entre itens de uma guia nem a validade das interpretações locais para toda versão histórica do TISS. Para uso científico, registrar como perfil de um recorte público estadual completo, com fonte, hashes, ambiente e limites, sem generalizar para a base nacional.
 
+## Execução integral do Core no recorte PR/202501
+
+Em 08/11/2026, o Core processou o CSV integral com 7.855.323 registros, extraído do ZIP identificado na seção anterior. A compilação foi feita em Ubuntu 24.04.3 LTS x86_64, com g++ 13.3.0, usando o código do repositório no commit `6a63514312482df1439a76d20d4b30b633ba39cd` e as opções `-std=c++23 -O2 -Wall -Wextra`. Para incluir TUSS 63 sem ativar a auditoria SQLite por registro, a cópia temporária de execução acrescentou esse catálogo à lista inicial de referências; o validador, o DAO CSV, os contratos e os demais catálogos foram usados sem alteração. Nenhum arquivo do repositório foi modificado por essa adaptação.
+
+Os CSVs TUSS 20, 22 e 63 usados nesta execução correspondem aos arquivos versionados e seus hashes SHA-256 conferem com os manifestos: `3f2f2238c3c0e65927f62e50a3723aadd5cc33584b1b65b7ee4d114f210fcad0`, `112a1fe0cc9adc313eea9931c894d9a252d13ad8a52a4102d15830ec80eba33c` e `007954dc5546a941a4da75c8b33c50fb578d0c333d8483cc32234fe34a21574d`, respectivamente. O CSV de entrada extraído tem SHA-256 `4eef163cc0b7f3d6d09e41821fa2dfb2912dd0a13f160425c008b233323ae096`. O binário produzido para a execução tem SHA-256 `e7a7d97d1a05f63a94e1ce35116a10c9e1db9c27f0d1789fe1ae46a9c1d274a7`. Foram carregados 1.339.654 termos de referência. A auditoria SQLite e as exportações CSV/SQLite ficaram desativadas; portanto, esta execução complementa as evidências de classificação e desempenho, mas não comprova RF10 para a massa integral.
+
+| Resultado de estado | Registros |
+|---|---:|
+| Total | 7.855.323 |
+| Válidos | 7.609.841 |
+| Válidos com alerta | 3.343 |
+| Rejeitados | 242.139 |
+| Estrutura divergente | 0 |
+
+Os motivos de rejeição registrados foram: 240.875 por duplicidade; 1.262 por procedimento fora da vigência (1.240 do código `41001141` e 22 do código `40314430`); e 2 por precisão excedida em `QT_ITEM_EVENTO_INFORMADO`. As ocorrências de alerta por código ausente somaram 3.344: 3.343 na TUSS 22 e 1 na TUSS 20. A ocorrência da TUSS 20 também foi rejeitada por duplicidade; por isso, foi registrada como alerta, mas seu estado final é rejeitado. Essa sobreposição explica por que existem 3.344 ocorrências de alerta e 3.343 registros classificados como válidos com alerta.
+
+O Core informou 11,894 segundos de processamento; o tempo externo medido entre início e término do processo foi 13,579 segundos, com pico de memória residente de 3.092.572 KiB (aproximadamente 3,0 GiB). É uma única execução no ambiente registrado, não um benchmark nem uma medida generalizável. O resultado cobre o recorte estadual público do Paraná e não a base nacional. Para a análise científica, deve ser descrito como execução integral do Core nesse recorte, com versão, hashes, ambiente e a adaptação temporária de carregamento de TUSS 63 explicitados.
+
 ## Regras complementares e nomenclatura
 
 A rejeição de conteúdo duplicado compara os onze campos do registro. Essa regra complementar é identificada nos documentos do projeto como **DUP-01**. Os testes `tests/test_fluxo_validacao.py` e `tests/test_fluxo_sqlite_duplicidade.py` passaram nos dois sistemas; a documentação específica está em [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md).
