@@ -140,9 +140,25 @@ O Core informou 11,894 segundos de processamento; o tempo externo medido entre i
 
 A preparação para a sabatina registra uma execução anterior da massa integral no Compaq Windows, em 09/10/2026: 7.855.323 registros processados pelo CSV com `--export`, usando os catálogos TUSS 22 e 63. O resultado foi 7.782.446 válidos, 71.613 válidos com alerta, 1.264 rejeitados e zero divergências estruturais; o tempo interno foi 514,783 s e o tempo total exibido pelo Code::Blocks foi 515,020 s. Essa evidência confirma que o equipamento concluiu uma execução integral naquela versão e configuração. O registro também aponta que a TUSS 20 não estava carregada, portanto não representa a cobertura do catálogo nem as regras da versão atual. A preparação para sabatina está registrada no documento de evidências do projeto.
 
-### Situação da repetição integral na configuração atual
+### Execução integral atual no Windows (Compaq)
 
-Em 08/11/2026, o usuário confirmou que o Compaq tem 4 GB de memória física instalada e não possui slot para expansão; o Windows reporta 3,6 GiB utilizáveis. A verificação inicial registrou 0,47 GiB disponíveis. Após reinicializar o Windows e fechar o aplicativo Copilot, a memória livre foi medida em 0,39 GiB; os processos do Chrome ainda somavam aproximadamente 0,76 GiB de memória residente na listagem dos oito maiores processos. A execução integral atual no Ubuntu, com código e regras mais recentes, atingiu pico de 3.092.572 KiB. Por isso, a repetição dessa configuração atual foi adiada para evitar forte paginação ou interrupção. Isso não contradiz nem invalida a execução histórica integral no Windows: são versões e configurações diferentes, e a memória livre observada em 08/11/2026 é apenas a condição daquele momento. A regressão automatizada no `windows-latest` passou no workflow [42512371868](https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002/actions/runs/42512371868), mas não processa a massa integral. Assim, há evidência integral histórica no Windows e evidência integral da configuração atual no Ubuntu; ainda falta reproduzir a configuração atual do Core em Windows.
+Em 08/11/2026, o Core processou no Compaq Windows o CSV integral do recorte PR/202501: 7.855.323 registros, 462.698.039 bytes, 11 colunas, competência janeiro/2025. O executável Release foi recompilado no Code::Blocks com GCC 14.2.0 a partir do código vigente no commit `e303f23`; o Build terminou com zero erros e um aviso sobre `-std=c++23` aplicado à unidade C do SQLite. A chamada incluiu TUSS 22 e 63 por argumento e carregou também as referências integradas TUSS 19, 20 e 60. A execução foi iniciada com `--export` para `data/sample/saida_full_windows_20261108_172622`; a verificação posterior dos arquivos exportados ainda precisa ser concluída.
+
+| Resultado de estado | Registros |
+|---|---:|
+| Total | 7.855.323 |
+| Válidos | 7.609.841 |
+| Válidos com alerta | 3.343 |
+| Rejeitados | 242.139 |
+| Estrutura divergente | 0 |
+
+Os motivos de rejeição no resumo foram: 240.875 por duplicidade; 1.262 por procedimento fora da vigência; e 2 por precisão excedida em `QT_ITEM_EVENTO_INFORMADO`. Os alertas de códigos não localizados nos snapshots TUSS 20/22 somaram 3.344 ocorrências; uma dessas ocorrências também foi rejeitada por duplicidade, por isso o total de registros válidos com alerta é 3.343.
+
+O tempo interno informado pelo Core foi 963,538 segundos (16 min 3,538 s), aproximadamente 8152.58 registros por segundo nessa execução. As contagens de classificação coincidem com a execução integral atual no Ubuntu. Os tempos não são comparáveis como benchmark: o Windows executou com `--export`, enquanto o ensaio Ubuntu desativou as exportações e a auditoria por registro; os ambientes e condições também diferem. Foi uma execução por ambiente, sem repetição estatística.
+
+O equipamento tem 4 GB de RAM instalada, sem slot para expansão; o Windows reconhece 3,6 GiB utilizáveis. A leitura pré-execução após reinicialização e fechamento do Copilot indicou 0,39 GiB livres. O pico de memória do processo e o uso de arquivo de paginação durante esta execução não foram medidos. Também não houve medição de energia. Para discussão de engenharia verde, os dados permitem descrever volumetria, tempo e limite do hardware; tempo de processamento isolado não demonstra consumo energético nem economia. A avaliação energética exigiria instrumentação e protocolo controlado, com medições repetidas.
+
+A execução confirma o processamento integral do recorte estadual público PR/202501 pelo Core atual no Windows e complementa a execução atual no Ubuntu. O recorte não representa a base nacional; os resultados dependem das regras operacionais e dos snapshots TUSS versionados descritos nesta matriz.
 ## Regras complementares e nomenclatura
 
 A rejeição de conteúdo duplicado compara os onze campos do registro. Essa regra complementar é identificada nos documentos do projeto como **DUP-01**. Os testes `tests/test_fluxo_validacao.py` e `tests/test_fluxo_sqlite_duplicidade.py` passaram nos dois sistemas; a documentação específica está em [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md).
