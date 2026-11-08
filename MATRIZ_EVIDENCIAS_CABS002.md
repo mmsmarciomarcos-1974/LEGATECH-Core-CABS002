@@ -136,6 +136,10 @@ Os motivos de rejeição registrados foram: 240.875 por duplicidade; 1.262 por p
 
 O Core informou 11,894 segundos de processamento; o tempo externo medido entre início e término do processo foi 13,579 segundos, com pico de memória residente de 3.092.572 KiB (aproximadamente 3,0 GiB). É uma única execução no ambiente registrado, não um benchmark nem uma medida generalizável. O resultado cobre o recorte estadual público do Paraná e não a base nacional. Para a análise científica, deve ser descrito como execução integral do Core nesse recorte, com versão, hashes, ambiente e a adaptação temporária de carregamento de TUSS 63 explicitados.
 
+### Situação da repetição integral no Windows
+
+Na tentativa de preparar a execução no Compaq Windows, em 08/11/2026, `Win32_ComputerSystem` reportou 3,6 GiB de RAM física total e apenas 0,47 GiB disponíveis. Como a execução integral no Ubuntu atingiu pico de 3.092.572 KiB no processo, a massa completa não foi executada nesse equipamento para evitar pressão extrema de memória, paginação intensa ou interrupção. A regressão automatizada no `windows-latest` passou no workflow [42512371868](https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002/actions/runs/42512371868), mas não processa a massa PR/202501 integral. Portanto, a evidência integral permanece limitada ao Ubuntu; uma reprodução integral no Windows requer um ambiente com memória física disponível suficiente para o pico do processo e o sistema operacional.
+
 ## Regras complementares e nomenclatura
 
 A rejeição de conteúdo duplicado compara os onze campos do registro. Essa regra complementar é identificada nos documentos do projeto como **DUP-01**. Os testes `tests/test_fluxo_validacao.py` e `tests/test_fluxo_sqlite_duplicidade.py` passaram nos dois sistemas; a documentação específica está em [VALIDACAO_DUPLICIDADE.md](VALIDACAO_DUPLICIDADE.md).
