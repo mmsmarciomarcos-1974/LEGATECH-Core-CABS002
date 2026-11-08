@@ -46,7 +46,7 @@ O workflow [Regressão TUSS — Linux e Windows](.github/workflows/regressao-tus
 
 ## Execução no Windows e no Ubuntu
 
-Em 02/11/2026, o projeto foi executado pelo Code::Blocks, na configuração Release, nos dois sistemas. A configuração usa caminhos relativos e a mesma massa controlada `data/sample/PR_202501_AMB_DET_validacao.csv`, com as referências TUSS 22 e 63 de 202501.
+Em 02/11/2026, o projeto foi executado pelo Code::Blocks, na configuração Release, nos dois sistemas, com caminhos relativos e a mesma massa controlada `data/sample/PR_202501_AMB_DET_validacao.csv`, usando as referências TUSS 22 e 63 de 202501. Este ensaio controlado processou oito registros:
 
 | Ambiente | Registros | Válidos | Válidos com alerta | Rejeitados | Estrutura divergente | Retorno |
 |---|---:|---:|---:|---:|---:|---:|
@@ -54,6 +54,20 @@ Em 02/11/2026, o projeto foi executado pelo Code::Blocks, na configuração Rele
 | Ubuntu | 8 | 2 | 1 | 5 | 1 | 0 |
 
 Nos dois ambientes, a exportação foi confirmada em `../data/output/saida_codeblocks`. Esta evidência demonstra a compilação/execução e a resolução dos caminhos relativos com a massa controlada; não representa benchmark nem validação de processamento em escala.
+
+### Execução integral no Compaq Windows — 08/11/2026
+
+O arquivo público `PR_202501_AMB_DET.csv`, recorte do Paraná na competência janeiro de 2025, tem 462.698.039 bytes e 7.855.323 registros. No notebook Compaq com 4 GB de RAM, a execução Release terminou com código 0 e exportou resultados em CSV e SQLite:
+
+| Resultado | Registros |
+|---|---:|
+| Válidos | 7.609.841 |
+| Válidos com alerta | 3.343 |
+| Rejeitados | 242.139 |
+| Divergências estruturais | 0 |
+| Total processado | 7.855.323 |
+
+O tempo interno informado pelo programa foi 963,538 s (cerca de 16 minutos). Foram gerados `aceitos.csv` (1.291.810.378 bytes), `contexto.csv` (394 bytes), `rejeitados.csv` (55.606.708 bytes) e `resultados.db` (970.088.448 bytes), totalizando 2.317.505.928 bytes, aproximadamente 5,01 vezes o tamanho da entrada. Essa razão descreve o volume armazenado na saída; não mede consumo de energia. O pico de memória do processo e o uso de paginação não foram medidos durante essa execução. Trata-se de uma execução em um equipamento e configuração; os números não são um benchmark nem sustentam generalização de desempenho ou eficiência energética.
 
 A origem e a normalização das TUSS 20 e 60 estão descritas em [CATALOGO_TUSS20.md](CATALOGO_TUSS20.md) e [CATALOGO_TUSS60.md](CATALOGO_TUSS60.md).
 
