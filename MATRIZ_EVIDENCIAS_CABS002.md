@@ -88,6 +88,30 @@ As referências proprietárias apareceram com estas frequências: `00` 225.072; 
 
 A recontagem usou o intervalo de competência inclusivo de 01/01/2025 a 31/01/2025 e comparou separadamente as colunas oficiais de início e fim de vigência. Na TUSS 19, os 95 códigos distintos usados (131 ocorrências) estão localizados e vigentes no mês; a contagem anterior de 128 dentro e 3 fora foi substituída por esse resultado, após conferência da coluna “Data de fim de vigência” nas planilhas oficiais. Na TUSS 22, as 1.262 ocorrências fora do período são de dois códigos: `41001141` (1.240 ocorrências) e `40314430` (22), ambos com início de vigência em 01/02/2025. Não houve ocorrência conhecida com vigência encerrada antes de janeiro/2025 no cruzamento TUSS 22. Pelo comportamento documentado no Core, esses códigos comprovadamente ainda não vigentes são rejeitados; códigos ausentes do snapshot permanecem alertas. As contagens são ocorrências de códigos e não identificam pessoas ou registros individuais.
 
+### Investigação dos códigos ausentes dos snapshots
+
+O cruzamento foi repetido contra as abas oficiais TUSS 20 (41.416 códigos únicos) e TUSS 22 (5.964 códigos únicos) do pacote 202501, mantendo tabela e código como chave composta. Os códigos abaixo não aparecem na aba correspondente. Isso confirma ausência no snapshot analisado, mas não prova que sejam inválidos na data do evento ou que a operadora tenha reportado incorretamente; por isso, o Core mantém o resultado como alerta.
+
+| Tabela | Código ausente | Ocorrências no recorte |
+|---|---:|---:|
+| 20 | 90603303 | 1 |
+| 22 | 30101077 | 423 |
+| 22 | 30801095 | 1 |
+| 22 | 30911117 | 2 |
+| 22 | 30912164 | 4 |
+| 22 | 40403300 | 3 |
+| 22 | 40403866 | 11 |
+| 22 | 50000462 | 2.402 |
+| 22 | 50000721 | 261 |
+| 22 | 50001060 | 212 |
+| 22 | 81000383 | 10 |
+| 22 | 82000239 | 2 |
+| 22 | 82000255 | 3 |
+| 22 | 82000263 | 1 |
+| 22 | 84000244 | 8 |
+
+As frequências somam 1 ocorrência ausente na TUSS 20 e 3.343 na TUSS 22, sem expor identificadores de registros ou beneficiários. Para análise científica, este achado pode ser descrito como divergência observada entre códigos reportados no recorte público PR/202501 e as abas TUSS 20/22 do pacote oficial 202501; a causa não foi determinada e não deve ser apresentada como erro confirmado do arquivo ou do catálogo.
+
 ### Interpretação e limites
 
 No recorte analisado, os dados confirmam que as regras condicionais de pacote explicam os vazios dos dois campos de valor. Também mostram ocorrências fora da vigência nos snapshots TUSS 19 e 22, dois valores de quantidade acima da precisão operacional adotada e códigos de procedimento ausentes dos snapshots 20 e 22. Ausência no snapshot continua sem provar invalidade histórica; por isso, o Core gera alerta nesse caso.
