@@ -12,7 +12,7 @@ Os identificadores, pesos e sínteses abaixo seguem o baseline aceito registrado
 | RF01 | 5% | Selecionar arquivo local. | `main.cpp` recebe o caminho do arquivo por argumento. Code::Blocks Release executou a massa controlada nos dois sistemas com caminhos relativos. | **Demonstrado em Windows e Ubuntu.** Evidência manual: 8 linhas processadas e retorno 0 em ambos. |
 | RF02 | 15% | Ler pelo menos dois formatos por DAO. | `DAOEntrada`, `CsvDAOEntrada` e `SQLiteDAOEntrada`. `tests/test_fluxo_validacao.py` exercita CSV; `tests/test_fluxo_sqlite.py` exercita SQLite. | **Demonstrado em Windows e Ubuntu.** CSV: 8 registros; SQLite: 10 registros. |
 | RF03 | 10% | Validar estrutura mínima antes dos registros. | Contratos CSV e esquema relacional em `ContratoAmbDet2023Plus`, `CsvDAOEntrada` e `SQLiteDAOEntrada`. A massa CSV controlada inclui uma linha estruturalmente divergente. | **Suíte abrangente passou no Ubuntu e no Windows em 02/11/2026.** Inclui cenários adicionais de estrutura e esquema. |
-| RF04 | 10% | Validar obrigatórios, tipos, faixas e domínios. | `ValidadorRegistroTiss.cpp`; regras em [VALIDACAO_CAMPOS.md](VALIDACAO_CAMPOS.md); catálogos TUSS 19, 20, 22, 60 e 63; regressão em `tests/test_catalogo_tuss.cpp` e `tools/testar_tuss.py`. | TUSS 19 integrada com 1.292.182 códigos no snapshot 202501; TUSS 60 integrada com 61 códigos únicos para `UNIDADE_MEDIDA`. A regressão agora cobre domínio, formato, campo condicional, vigência e paridade CSV/SQLite. O workflow [regressao-tuss.yml](.github/workflows/regressao-tuss.yml) executou a suíte em Linux e Windows; ambas as execuções foram aprovadas ([run no GitHub Actions](https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002/actions/runs/42428579828)). A obrigatoriedade contextual é explicitada como regra operacional quando inferível; aplicabilidade histórica e confronto com a massa completa permanecem limites. A rastreabilidade por campo está detalhada abaixo. |
+| RF04 | 10% | Validar obrigatórios, tipos, faixas e domínios. | `ValidadorRegistroTiss.cpp`; regras em [VALIDACAO_CAMPOS.md](VALIDACAO_CAMPOS.md); catálogos TUSS 19, 20, 22, 60 e 63; regressão em `tests/test_catalogo_tuss.cpp` e `tools/testar_tuss.py`. | TUSS 19 integrada com 1.292.182 códigos no snapshot 202501; TUSS 60 integrada com 61 códigos únicos para `UNIDADE_MEDIDA`. A regressão agora cobre domínio, formato, campo condicional, vigência e paridade CSV/SQLite. O workflow [regressao-tuss.yml](.github/workflows/regressao-tuss.yml) executou a suíte em Linux e Windows; ambas as execuções foram aprovadas ([run no GitHub Actions](https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002/actions/runs/42428579828)). A obrigatoriedade contextual é explicitada como regra operacional quando inferível. Foi perfilado o arquivo público integral do Paraná na competência 202501; a cobertura nacional e a execução do Core sobre essa massa permanecem pendentes. A rastreabilidade por campo e o perfil agregado estão detalhados abaixo. |
 | RF05 | 10% | Validar datas e alertas de compatibilidade temporal. | `ValidadorRegistroTiss.cpp`; regras e limites em [VALIDACAO_TEMPORAL.md](VALIDACAO_TEMPORAL.md); cenários temporais em `tests/test_catalogo_tuss.cpp` e `tools/testar_tuss.py`. | **Suíte abrangente passou no Ubuntu e no Windows em 02/11/2026**, incluindo datas, rejeições e alertas Y2K38 exportados em CSV e SQLite. Y2K38 é cenário sintético preventivo; não houve integração com destino de 32 bits. |
 | RF06 | 5% | Classificar em válido, válido com alerta e rejeitado. | `ResultadoValidacao`; regressões CSV e SQLite verificam estados, contagens e ocorrências. | **Demonstrado em Windows e Ubuntu.** No CSV controlado: 2 válidos, 1 com alerta e 5 rejeitados. |
 | RF07 | 10% | Registrar motivo(s) de rejeição. | `ResultadoValidacao` acumula motivos e alertas; `tests/test_fluxo_validacao.py` confere motivo de duplicidade, divergência estrutural e preservação de alerta junto com motivo. | **Demonstrado em Windows e Ubuntu** na massa controlada; a auditoria registra as ocorrências. |
@@ -47,9 +47,48 @@ O rótulo “a partir de 2023” torna o dicionário consultado temporalmente re
 
 ### Leitura da cobertura e do Y2K38
 
-A regressão evidencia o comportamento implementado para casos definidos, limites e combinações selecionados. Ela não substitui validação contra a massa pública completa, nem comprova por si só a aplicabilidade histórica de cada regra à competência 202501. A ausência no snapshot de procedimentos TUSS permanece alerta; para TUSS 60, o snapshot 202501 é tratado como domínio completo no escopo documentado.
+A regressão evidencia o comportamento implementado para casos definidos, limites e combinações selecionados. O perfil integral de PR/202501, registrado abaixo, complementa esses testes; ele não substitui a análise de outros estados nem comprova por si só a aplicabilidade histórica de cada regra à competência 202501. A ausência no snapshot de procedimentos TUSS permanece alerta; para TUSS 60, o snapshot 202501 é tratado como domínio completo no escopo documentado.
 
 O cenário Y2K38 pertence ao controle temporal associado a `DT_REALIZACAO`: datas sintaticamente válidas a partir de janeiro de 2038 mantêm-se válidas e recebem alerta de compatibilidade, enquanto datas inválidas são rejeitadas sem alerta Y2K38. A cobertura é sintética e preventiva; não afirma que haja risco observado no ambiente de execução nem que o projeto tenha testado uma plataforma de 32 bits.
+
+## Perfil agregado da massa pública PR/202501
+
+### Fonte e método
+
+Arquivo recebido da ANS: `PR_202501_AMB_DET.zip`; CSV interno `PR_202501_AMB_DET.csv`. O arquivo contém 7.855.323 registros e 462.698.039 bytes descompactados. O SHA-256 do ZIP analisado é `ad166e72447f3ea43a461bc89abf720ff4196268b0906029860c5c4035de203b`. As referências de terminologia foram lidas do pacote TISS 202501, SHA-256 `e4f7ee54d0e06c6c7f5a3374fb8cd8bedd67069e6c44f1d05b03a89298f30275`.
+
+O perfil foi feito em Linux x86_64, Python 3.12.14, por leitura sequencial do CSV e comparação com as tabelas oficiais 19, 20, 22, 60 e 63. Foram preservados apenas contagens agregadas; nenhum registro individual foi copiado para o relatório ou para o repositório. O arquivo medido representa **todo o recorte do Paraná em 202501**, não a base nacional. O executável do Core não foi processado contra essa massa; os números abaixo são perfil externo confrontado com as regras e o código-fonte atuais, não saída do sistema.
+
+### Estrutura e campos
+
+| Campo ou controle | Resultado agregado no arquivo |
+|---|---|
+| Estrutura | Cabeçalho exatamente igual às 11 colunas previstas; 7.855.323 registros; zero linhas com quantidade de colunas divergente. |
+| `ID_EVENTO_ATENCAO_SAUDE` | Nenhum vazio ou formato localmente inválido; comprimento máximo observado: 10 caracteres. |
+| `UF_PRESTADOR` | Nenhum vazio ou sigla fora do domínio; nenhuma ocorrência em caixa baixa. O recorte do Paraná não exercita as 27 siglas, já cobertas por teste unitário. |
+| `DT_REALIZACAO` | Os 7.855.323 registros têm competência `2025-01`; nenhum formato ou mês inválido e nenhum caso em 2038 ou posterior. |
+| `CD_PROCEDIMENTO` + `CD_TABELA_REFERENCIA` | Nenhum formato ou comprimento local inválido. As frequências das referências e o cruzamento de vigência estão na tabela seguinte. |
+| `QT_ITEM_EVENTO_INFORMADO` | 346.531 vazios, aceitos pelo perfil do extrato; dois preenchimentos excedem a precisão operacional de seis dígitos. Ambos têm precisão observada de sete dígitos. |
+| `VL_ITEM_EVENTO_INFORMADO` e `VL_ITEM_PAGO_FORNECEDOR` | 346.531 vazios em cada campo; todos ocorrem em registros com `IND_PACOTE=1). Nenhum formato/precisão inválido, sinal negativo em valor pago ou ocorrência negativa fora da regra local. |
+| `UNIDADE_MEDIDA` | 7.746.248 vazios; 109.075 preenchidos. Todos os preenchidos correspondem a código vigente no domínio completo TUSS 60 (61 códigos). |
+| `IND_PACOTE` e `IND_TABELA_PROPRIA` | Nenhum valor fora de vazio/`0`/`1) ou combinação divergente das regras locais documentadas. |
+
+### Referências TUSS de procedimento
+
+| Tabela | Registros no recorte | Códigos distintos usados | Cruzamento com snapshot 202501 |
+|---|---:|---:|---|
+| 19 | 131 | 95 | Todos localizados; 128 registros dentro da vigência e 3 fora da vigência do mês. |
+| 20 | 68.139 | 1.384 | 68.138 registros localizados e vigentes; 1 ocorrência de código ausente do snapshot, tratada pelo Core como alerta. |
+| 22 | 6.132.916 | 1.964 | 6.128.311 registros dentro da vigência; 1.262 fora da vigência; 3.343 ocorrências correspondem a 14 códigos ausentes do snapshot, tratadas pelo Core como alertas. |
+| 63 | 1.235.717 | 31 | Todos os 31 códigos localizados e vigentes. |
+
+As referências proprietárias apareceram com estas frequências: `00` 225.072; `90` 67.414; `98` 125.934 registros. O código atual classifica a ausência no snapshot como alerta e a incompatibilidade comprovada de vigência como motivo de rejeição. As contagens acima são por ocorrência de cada condição; não foram somadas para produzir um total de registros rejeitados porque condições de campos diferentes podem coexistir no mesmo registro.
+
+### Interpretação e limites
+
+No recorte analisado, os dados confirmam que as regras condicionais de pacote explicam os vazios dos dois campos de valor. Também mostram ocorrências fora da vigência nos snapshots TUSS 19 e 22, dois valores de quantidade acima da precisão operacional adotada e códigos de procedimento ausentes dos snapshots 20 e 22. Ausência no snapshot continua sem provar invalidade histórica; por isso, o Core gera alerta nesse caso.
+
+Este perfil não valida o resultado completo de processamento/exportação do Core, não mede tempo ou memória de execução do Core e não é benchmark. Também não cobre outras UFs, consistências entre itens de uma guia nem a validade das interpretações locais para toda versão histórica do TISS. Para uso científico, registrar como perfil de um recorte público estadual completo, com fonte, hashes, ambiente e limites, sem generalizar para a base nacional.
 
 ## Regras complementares e nomenclatura
 
