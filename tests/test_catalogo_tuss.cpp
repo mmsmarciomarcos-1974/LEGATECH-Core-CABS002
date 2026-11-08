@@ -28,7 +28,7 @@ RegistroTissBruto registro(const std::string& codigo, const std::string& tabela 
 int main(int argc, char* argv[])
 try
 {
-    exigir(argc == 4, "caminhos dos catalogos 22, 63 e diretorio TUSS 19");
+    exigir(argc == 5, "caminhos dos catalogos 22, 63, diretorio TUSS 19 e catalogo 60");
     CatalogoTuss catalogo(argv[1], "202501", "22");
     exigir(catalogo.tamanho() == 5964, "carga integral");
     exigir(catalogo.consultar("19", "10101012") == nullptr, "par isolado por tabela");
@@ -64,6 +64,48 @@ try
            "codigo TUSS 19 com sete digitos rejeitado");
     exigir(validarTuss19.validar(registro("1234567890", "19")).getEstado() == EstadoValidacao::REJEITADO,
            "codigo TUSS 19 com dez digitos rejeitado");
+    CatalogoTuss tuss60(argv[4], "202501", "60");
+    exigir(tuss60.tamanho() == 61, "carga integral TUSS 60");
+    exigir(tuss60.contemTabela("60") && tuss60.consultar("60", "036"),
+           "codigo TUSS 60 preserva tres digitos e zero inicial");
+    exigir(tuss60.consultar("60", "36") == nullptr, "TUSS 60 nao completa zeros automaticamente");
+    ValidadorRegistroTiss validarTuss60(&tuss60);
+    auto registroComUnidade = [](const std::string& unidade, const std::string& mes = "2025-01") {
+        return RegistroTissBruto("1", "PR", mes, "A1", "00", "1", "100", "0",
+                                 unidade, "0", "1");
+    };
+    auto temOcorrencia = [](const std::vector<std::string>& ocorrencias,
+                            const std::string& trecho) {
+        for (const auto& ocorrencia : ocorrencias)
+            if (ocorrencia.find(trecho) != std::string::npos) return true;
+        return false;
+    };
+    exigir(validarTuss60.validar(registroComUnidade("036")).getEstado() == EstadoValidacao::VALIDO,
+           "unidade TUSS 60 valida e vigente");
+    exigir(validarTuss60.validar(registroComUnidade("")).getEstado() == EstadoValidacao::VALIDO,
+           "unidade vazia aceita por obrigatoriedade condicional");
+    const auto unidadeAusente = validarTuss60.validar(registroComUnidade("999"));
+    exigir(unidadeAusente.getEstado() == EstadoValidacao::REJEITADO &&
+           temOcorrencia(unidadeAusente.getMotivos(), "fora do dominio TUSS 60"),
+           "unidade fora da TUSS 60 rejeitada com motivo");
+    const auto unidadeFormato = validarTuss60.validar(registroComUnidade("36"));
+    exigir(unidadeFormato.getEstado() == EstadoValidacao::REJEITADO &&
+           temOcorrencia(unidadeFormato.getMotivos(), "formato invalido"),
+           "unidade sem tres digitos rejeitada");
+    const auto unidadeAntesDaVigencia = validarTuss60.validar(
+        registroComUnidade("057", "2016-05"));
+    exigir(unidadeAntesDaVigencia.getEstado() == EstadoValidacao::REJEITADO &&
+           temOcorrencia(unidadeAntesDaVigencia.getMotivos(),
+                         "UNIDADE_MEDIDA_FORA_DA_VIGENCIA"),
+           "unidade TUSS 60 antes da vigencia rejeitada");
+    exigir(validarTuss60.validar(registroComUnidade("057", "2016-06")).getEstado() ==
+               EstadoValidacao::VALIDO,
+           "unidade TUSS 60 valida no mes inicial");
+    const auto unidadeInicioNoMes = validarTuss60.validar(
+        registroComUnidade("001", "2012-10"));
+    exigir(unidadeInicioNoMes.getEstado() == EstadoValidacao::VALIDO_COM_ALERTA &&
+           temOcorrencia(unidadeInicioNoMes.getAlertas(), "VIGENCIA_PARCIAL_NO_MES"),
+           "unidade TUSS 60 alerta quando mes nao resolve dia de inicio");
     ValidadorRegistroTiss comGrupos(&ambos);
     exigir(comGrupos.validar(registro("018", "63")).getEstado() == EstadoValidacao::VALIDO, "grupo vigente com zeros");
     exigir(comGrupos.validar(registro("004", "63")).getEstado() == EstadoValidacao::VALIDO, "segundo grupo vigente");

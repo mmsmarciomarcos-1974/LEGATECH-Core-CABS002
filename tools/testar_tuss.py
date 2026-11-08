@@ -19,6 +19,8 @@ CORE = ROOT / "LEGATECH_Core"
 CATALOG = ROOT / "data/reference/tuss22_202501.csv"
 GROUPS = ROOT / "data/reference/tuss63_202501.csv"
 TUSS19_DIR = ROOT / "data/reference/tuss19_202501"
+TUSS60_DIR = ROOT / "data/reference/tuss60_202501"
+TUSS60_CATALOG = TUSS60_DIR / "tuss60_202501.csv"
 
 
 def run(args):
@@ -79,6 +81,22 @@ for part in manifest19["parts"]:
     total19 += len(rows) - 1
 require(total19 == manifest19["records"], "Total das partes TUSS 19 divergente")
 
+manifest60 = json.loads((TUSS60_DIR / "manifest.json").read_text(encoding="utf-8"))
+require(manifest60["catalog_version"] == "202501" and manifest60["table"] == "60"
+        and manifest60["records"] == 61 and manifest60["unique_codes"] == 61
+        and manifest60["code_length"] == 3
+        and manifest60["source_zip_sha256"] == manifest19["source_zip_sha256"],
+        "Identificacao/quantidade do snapshot TUSS 60 divergente")
+payload60 = TUSS60_CATALOG.read_bytes().replace(b"\r\n", b"\n")
+require(hashlib.sha256(payload60).hexdigest() == manifest60["output_sha256"],
+        "Hash do catalogo TUSS 60 divergente")
+with TUSS60_CATALOG.open(encoding="utf-8", newline="") as source:
+    rows60 = list(csv.DictReader(source, delimiter=";"))
+require(len(rows60) == 61 and len({row["cd_procedimento"] for row in rows60}) == 61
+        and all(len(row["cd_procedimento"]) == 3 and row["cd_procedimento"].isdigit()
+                for row in rows60),
+        "Codigos do snapshot TUSS 60 divergentes")
+
 with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     build = Path(scratch)
     suffix = ".exe" if os.name == "nt" else ""
@@ -91,7 +109,7 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     tests = build / ("test_catalogo_tuss" + suffix)
     run(common + [CORE / "main.cpp"] + sources + [sqlite] + libraries + ["-o", app])
     run(common + [ROOT / "tests/test_catalogo_tuss.cpp"] + sources + [sqlite] + libraries + ["-o", tests])
-    print(run([tests, CATALOG, GROUPS, TUSS19_DIR]).stdout.strip())
+    print(run([tests, CATALOG, GROUPS, TUSS19_DIR, TUSS60_CATALOG]).stdout.strip())
     for name, expected in [("PR_202501_AMB_DET_sample.csv", [10, 7, 3, 0, 0]),
                            ("PR_202501_AMB_DET_sample_rejeitado.csv", [10, 6, 3, 1, 0])]:
         result = run([app, ROOT / "data/sample" / name, CATALOG])
@@ -126,11 +144,11 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         require(len(executions) == 2, "Reexecucao deve preservar o historico")
         # A TUSS 20 e carregada automaticamente junto com a TUSS 22.
         require(
-            executions[0][1:9] == ("202501", "202501", "22,20,19", 10, 7, 3, 0, 0),
+            executions[0][1:9] == ("202501", "202501", "22,20,60,19", 10, 7, 3, 0, 0),
             f"Metadados/resumo positivo divergentes: {executions[0][1:9]}"
         )
         require(
-            executions[1][1:9] == ("202501", "202501", "22,20,19", 10, 6, 3, 1, 0),
+            executions[1][1:9] == ("202501", "202501", "22,20,60,19", 10, 6, 3, 1, 0),
             f"Metadados/resumo negativo divergentes: {executions[1][1:9]}"
         )
         require(all(row[-1] for row in executions), "Execucao sem encerramento")
@@ -207,7 +225,7 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         check_counts(run([app, source, CATALOG, both_database, GROUPS]).stdout, expected)
     with closing(sqlite3.connect(both_database)) as db, db:
         require(db.execute("SELECT tabela_catalogo,total,validos,alertas,rejeitados FROM auditoria_execucao ORDER BY id").fetchall()
-                == [("22,20,63,19", 10, 10, 0, 0), ("22,20,63,19", 10, 9, 0, 1)], "Resumo/referencias TUSS 19, 20, 22 e 63")
+                == [("22,20,60,63,19", 10, 10, 0, 0), ("22,20,60,63,19", 10, 9, 0, 1)], "Resumo/referencias TUSS 19, 20, 22, 60 e 63")
         require(db.execute("SELECT COUNT(*) FROM auditoria_ocorrencia WHERE tipo='ALERTA'").fetchone()[0] == 0,
                 "Grupos da amostra ainda geraram alerta")
         require(db.execute("SELECT DISTINCT cd_procedimento FROM auditoria_resultado WHERE cd_tabela_referencia='63' ORDER BY cd_procedimento").fetchall()
@@ -274,6 +292,26 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
     check_counts(run([app, limites, CATALOG]).stdout, [4, 1, 0, 3, 0])
     check_counts(run([app, "--sqlite", banco_limites, "202501", CATALOG]).stdout, [4, 1, 0, 3, 0])
     print("OK: limites e precisao aplicados igualmente em CSV e SQLite")
+
+    unidades = build / "PR_202501_AMB_DET_unidades.csv"
+    linhas_unidades = [
+        ["1", "PR", "2025-01", "A1", "00", "1", "100", "0", "036", "0", "1"],
+        ["2", "PR", "2025-01", "A1", "00", "1", "100", "0", "", "0", "1"],
+        ["3", "PR", "2025-01", "A1", "00", "1", "100", "0", "999", "0", "1"],
+        ["4", "PR", "2025-01", "A1", "00", "1", "100", "0", "36", "0", "1"],
+    ]
+    with unidades.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream, delimiter=";", lineterminator="\n")
+        writer.writerow(cabecalho_limites)
+        writer.writerows(linhas_unidades)
+    banco_unidades = build / "unidades.db"
+    create_input(banco_unidades, linhas_unidades)
+    esperado_unidades = [4, 2, 0, 2, 0]
+    check_counts(run([app, unidades, CATALOG]).stdout, esperado_unidades)
+    check_counts(run([app, "--sqlite", banco_unidades, "202501", CATALOG]).stdout,
+                 esperado_unidades)
+    print("OK: TUSS 60 — dominio, zeros, campo condicional e paridade CSV/SQLite")
+
     empty_input = build / "vazio.db"
     create_input(empty_input, [])
     check_counts(run([app, "--sqlite", empty_input, "202501", CATALOG]).stdout, [0, 0, 0, 0, 0])

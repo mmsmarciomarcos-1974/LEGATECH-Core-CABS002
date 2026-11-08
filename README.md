@@ -42,6 +42,8 @@ A duplicidade é um controle complementar e não altera a numeração do baselin
 
 Rastreabilidade dos requisitos RF01–RF10, testes, resultados e limitações: [MATRIZ_EVIDENCIAS_CABS002.md](MATRIZ_EVIDENCIAS_CABS002.md).
 
+O workflow [Regressão TUSS — Linux e Windows](.github/workflows/regressao-tuss.yml) executa `tools/testar_tuss.py` nas duas plataformas após alterações no branch `main` e em pull requests.
+
 ## Execução no Windows e no Ubuntu
 
 Em 02/11/2026, o projeto foi executado pelo Code::Blocks, na configuração Release, nos dois sistemas. A configuração usa caminhos relativos e a mesma massa controlada `data/sample/PR_202501_AMB_DET_validacao.csv`, com as referências TUSS 22 e 63 de 202501.
