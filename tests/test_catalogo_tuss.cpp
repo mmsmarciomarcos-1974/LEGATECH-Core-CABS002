@@ -187,10 +187,12 @@ try
     exigir(avaliarCampos(std::string(30,'9'),"999999","9999999999999999.99","0").getEstado()
             == EstadoValidacao::VALIDO, "limites exatos aceitos");
     exigir(temMotivo(avaliarCampos(std::string(31,'9'),"1","100","0"),"30 digitos"), "ID acima do limite");
-    for (const auto& q : {".5","5.","1,2.3","1e3","-1","1000000","12345.67"})
+    for (const auto& q : {".5","5.","1,2.3","1e3","-1","1000000","12345.67","0.1234567"})
         exigir(temMotivo(avaliarCampos("1",q,"100","0"),"QT_ITEM_EVENTO_INFORMADO"), "quantidade invalida");
-    for (const auto& q : {"0","1.5","1,5","1234.56","000001"})
+    for (const auto& q : {"0","1.5","1,5","1234.56","0.123456","000001"})
         exigir(avaliarCampos("1",q,"100","0").getEstado() == EstadoValidacao::VALIDO, "quantidade dentro da precisao");
+    exigir(avaliarCampos("1","","100","0").getEstado() == EstadoValidacao::VALIDO,
+           "quantidade vazia aceita no extrato quando nao ha obrigatoriedade publicada");
     for (const auto& valor : {".5","5.","100.123","100,123","99999999999999999","1e3","NaN"})
     {
         exigir(temMotivo(avaliarCampos("1","1",valor,"0"),"VL_ITEM_EVENTO_INFORMADO"), "valor informado invalido");
