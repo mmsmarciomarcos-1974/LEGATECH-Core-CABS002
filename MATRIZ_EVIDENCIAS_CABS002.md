@@ -148,6 +148,8 @@ Em 02/11/2026, o Code::Blocks Release executou `data/sample/PR_202501_AMB_DET_va
 
 As regressões `tests/test_fluxo_validacao.py`, `tests/test_fluxo_sqlite.py` e `tests/test_fluxo_sqlite_duplicidade.py` também passaram nos dois ambientes, conforme os resultados registrados na sessão de validação de 02/11/2026.
 
+Em 08/11/2026, após os commits de documentação do perfil PR/202501, o workflow [Regressão TUSS — Linux e Windows](.github/workflows/regressao-tuss.yml) voltou a passar em `ubuntu-latest` e `windows-latest` (run [42512371868](https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002/actions/runs/42512371868)). A execução rodou `tools/testar_tuss.py`; ela confirma a regressão automatizada nas duas plataformas, mas não processa a massa PR/202501 integral no Windows.
+
 Em 02/11/2026, a suíte abrangente `tools/testar_tuss.py` passou no Ubuntu (`python3 tools/testar_tuss.py`) e no Windows (`py tools\testar_tuss.py`). No Windows, foi necessário incluir `C:\Program Files\CodeBlocks\MinGW\bin` no `PATH` para disponibilizar `gcc`, usado pelo script ao compilar seus testes. As duas execuções concluíram todos os cenários e a limpeza dos diretórios temporários.
 
 ## Catálogos e limites de cobertura
