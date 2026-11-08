@@ -283,15 +283,21 @@ with tempfile.TemporaryDirectory(prefix="legatech-build-") as scratch:
         ["1","PR","2025-01","10101012","22","999999","100,50","0","","0","0"],
         ["2","PR","2025-01","10101012","22",".5","100","0","","0","0"],
         ["3","PR","2025-01","10101012","22","1","100.123","0","","0","0"],
-        ["9"*31,"PR","2025-01","10101012","22","1","100","0","","0","0"]]
+        ["9"*31,"PR","2025-01","10101012","22","1","100","0","","0","0"],
+        ["5","PR","2025-01","10101012","22","1","-0.01","0","","0","0"],
+        ["6","PR","2025-01","10101012","22","1","0","-0.01","","0","0"],
+        ["7","PR","2025-01","10101012","22","1","0","-0.001","","0","0"],
+        ["8","PR","2025-01","10101012","22","1","0","0","","0","0"],
+        ["9","PR","2025-01","10101012","22","1","","0","","0","0"],
+        ["10","PR","2025-01","10101012","22","1","","","","1","0"]]
     with limites.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.writer(stream, delimiter=";", lineterminator="\n")
         writer.writerow(cabecalho_limites)
         writer.writerows(linhas_limites)
     banco_limites = build / "limites.db"
     create_input(banco_limites, linhas_limites)
-    check_counts(run([app, limites, CATALOG]).stdout, [4, 1, 0, 3, 0])
-    check_counts(run([app, "--sqlite", banco_limites, "202501", CATALOG]).stdout, [4, 1, 0, 3, 0])
+    check_counts(run([app, limites, CATALOG]).stdout, [10, 3, 1, 6, 0])
+    check_counts(run([app, "--sqlite", banco_limites, "202501", CATALOG]).stdout, [10, 3, 1, 6, 0])
     print("OK: limites e precisao aplicados igualmente em CSV e SQLite")
 
     unidades = build / "PR_202501_AMB_DET_unidades.csv"

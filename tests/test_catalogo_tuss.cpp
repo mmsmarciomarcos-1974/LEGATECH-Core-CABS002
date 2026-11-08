@@ -184,6 +184,10 @@ try
         for (const auto& motivo : r.getMotivos()) if (motivo.find(trecho) != std::string::npos) return true;
         return false;
     };
+    auto temAlerta = [&](const ResultadoValidacao& r, const std::string& trecho) {
+        for (const auto& alerta : r.getAlertas()) if (alerta.find(trecho) != std::string::npos) return true;
+        return false;
+    };
     exigir(avaliarCampos(std::string(30,'9'),"999999","9999999999999999.99","0").getEstado()
             == EstadoValidacao::VALIDO, "limites exatos aceitos");
     exigir(temMotivo(avaliarCampos(std::string(31,'9'),"1","100","0"),"30 digitos"), "ID acima do limite");
@@ -204,6 +208,21 @@ try
            "valores obrigatorios identificados quando vazios fora de pacote");
     exigir(avaliarCampos("1","1","","","","1").getEstado() == EstadoValidacao::VALIDO,
            "valores vazios permitidos em componente de pacote");
+    exigir(avaliarCampos("1","1","0","0").getEstado() == EstadoValidacao::VALIDO,
+           "zero aceito como valor informado e pago");
+    const auto informadoNegativo = avaliarCampos("1","1","-0.01","0");
+    exigir(informadoNegativo.getEstado() == EstadoValidacao::REJEITADO &&
+           temMotivo(informadoNegativo,"VL_ITEM_EVENTO_INFORMADO"),
+           "valor informado negativo rejeitado");
+    const auto pagoNegativo = avaliarCampos("1","1","0","-0.01");
+    exigir(pagoNegativo.getEstado() == EstadoValidacao::VALIDO_COM_ALERTA &&
+           temAlerta(pagoNegativo,"estorno") &&
+           temAlerta(pagoNegativo,"saldo acumulado da guia"),
+           "valor pago negativo aceito como alerta de estorno sem validar saldo da guia");
+    const auto pagoNegativoPrecisao = avaliarCampos("1","1","0","-0.001");
+    exigir(pagoNegativoPrecisao.getEstado() == EstadoValidacao::REJEITADO &&
+           temMotivo(pagoNegativoPrecisao,"VL_ITEM_PAGO_FORNECEDOR"),
+           "valor pago negativo fora da precisao rejeitado");
     exigir(temMotivo(avaliarCampos("1","1","000100,50","0",std::string(40,'A')),
                      "UNIDADE_MEDIDA: formato invalido"),
            "unidade de 40 caracteres deve obedecer ao dominio TUSS 60");
