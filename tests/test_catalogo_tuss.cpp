@@ -285,6 +285,14 @@ try
         for (const auto& alerta : r.getAlertas()) if (alerta.find(trecho) != std::string::npos) return true;
         return false;
     };
+    const auto idAusente = avaliarCampos("", "1", "100", "0");
+    exigir(idAusente.getEstado() == EstadoValidacao::REJEITADO &&
+           !idAusente.getMotivos().empty(),
+           "ID_EVENTO_ATENCAO_SAUDE vazio rejeitado com motivo");
+    const auto idNaoNumerico = avaliarCampos("A1", "1", "100", "0");
+    exigir(idNaoNumerico.getEstado() == EstadoValidacao::REJEITADO &&
+           !idNaoNumerico.getMotivos().empty(),
+           "ID_EVENTO_ATENCAO_SAUDE alfanumerico rejeitado com motivo");
     exigir(avaliarCampos(std::string(30,'9'),"999999","9999999999999999.99","0").getEstado()
             == EstadoValidacao::VALIDO, "limites exatos aceitos");
     exigir(temMotivo(avaliarCampos(std::string(31,'9'),"1","100","0"),"30 digitos"), "ID acima do limite");
