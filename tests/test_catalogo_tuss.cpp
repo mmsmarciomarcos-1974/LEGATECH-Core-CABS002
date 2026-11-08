@@ -124,6 +124,37 @@ try
         ValidadorRegistroTiss validador(&catalogo);
         return validador.validar(item, competencia);
     };
+    auto avaliarUfPrestador = [&](const std::string& uf) {
+        return validarSemHistorico(RegistroTissBruto(
+            "1", uf, "2025-01", "10101012", "22", "1", "100", "0", "", "0", "0"));
+    };
+    for (const auto& uf : {"AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
+                           "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
+                           "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"})
+        exigir(avaliarUfPrestador(uf).getEstado() == EstadoValidacao::VALIDO,
+               "sigla UF brasileira aceita");
+    const auto ufAusente = avaliarUfPrestador("");
+    exigir(ufAusente.getEstado() == EstadoValidacao::REJEITADO &&
+           temOcorrencia(ufAusente.getMotivos(), "campo obrigatorio"),
+           "UF vazia rejeitada com motivo");
+    const auto ufComprimento = avaliarUfPrestador("P");
+    exigir(ufComprimento.getEstado() == EstadoValidacao::REJEITADO &&
+           temOcorrencia(ufComprimento.getMotivos(), "formato invalido"),
+           "UF com tamanho diferente de dois rejeitada");
+    const auto ufNaoAlfabetica = avaliarUfPrestador("P1");
+    exigir(ufNaoAlfabetica.getEstado() == EstadoValidacao::REJEITADO &&
+           temOcorrencia(ufNaoAlfabetica.getMotivos(), "formato invalido"),
+           "UF com caractere nao alfabetico rejeitada");
+    const auto ufForaDoDominio = avaliarUfPrestador("XX");
+    exigir(ufForaDoDominio.getEstado() == EstadoValidacao::REJEITADO &&
+           temOcorrencia(ufForaDoDominio.getMotivos(), "fora do dominio"),
+           "sigla fora do dominio rejeitada");
+    const auto ufMinuscula = avaliarUfPrestador("pr");
+    exigir(ufMinuscula.getEstado() == EstadoValidacao::VALIDO_COM_ALERTA &&
+           temOcorrencia(ufMinuscula.getAlertas(), "fora do padrao de letras maiusculas"),
+           "UF reconhecida em minusculas aceita com alerta");
+    std::cout << "OK: UF_PRESTADOR - dominio, formato e alerta de caixa\n";
+
     exigir(validarSemHistorico(registro("10101012")).getEstado() == EstadoValidacao::VALIDO, "consulta vigente");
     exigir(validarSemHistorico(registro("99999999")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "ausencia no snapshot");
     exigir(validarSemHistorico(registro("010101012")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "nao remover zeros");

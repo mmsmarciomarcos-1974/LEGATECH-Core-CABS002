@@ -13,6 +13,12 @@ O indice oficial informa atualizacao em 25/08/2026. Essa consulta nao comprova q
 
 ## Regras acrescentadas
 
+### Regra preexistente documentada: `UF_PRESTADOR`
+
+O perfil local exige o campo, aceita exatamente duas letras correspondentes a uma das 27 siglas de Unidades da Federação e rejeita formato ou domínio diferentes. A sigla em minúsculas é reconhecida e recebe alerta de padronização, sem rejeição. O IBGE relaciona as 26 unidades estaduais e o Distrito Federal com suas siglas. A ANS também descreve `UF_PRESTADOR` como CHAR(2), “Unidade Federativa do Prestador”, em seu dicionário histórico do D-TISS; essa referência é de outro recorte de dados e não comprova, isoladamente, a obrigatoriedade no extrato `AMB_DET` da competência 202501. A obrigatoriedade permanece explicitamente uma regra local do perfil, não uma afirmação normativa da ANS para toda mensagem ou versão.
+
+A regressão em `tests/test_catalogo_tuss.cpp` verifica as 27 siglas, valor vazio, comprimento e caracteres inválidos, sigla fora do domínio e o alerta para letras minúsculas.
+
 | Campo | Referencia do dicionario | Regra desta etapa |
 |---|---|---|
 | ID_EVENTO_ATENCAO_SAUDE | NUMBER, tamanho 30 | Ate 30 digitos; obrigatoriedade e formato anteriores preservados |
