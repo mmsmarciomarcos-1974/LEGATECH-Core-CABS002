@@ -73,7 +73,7 @@ total19 = 0
 for part in manifest19["parts"]:
     path = TUSS19_DIR / part["file"]
     # Canoniza CRLF do checkout Windows para o LF fixado no manifesto.
-    payload = path.read_bytes().replace(b"\\r\\n", b"\\n")
+    payload = path.read_bytes().replace(b"\r\n", b"\n")
     require(hashlib.sha256(payload).hexdigest() == part["sha256"], "Hash de parte TUSS 19 divergente: " + part["file"])
     with path.open(encoding="utf-8", newline="") as source:
         rows = list(csv.reader(source, delimiter=";"))
