@@ -59,6 +59,10 @@ Pendentes: obrigatoriedade condicional dos demais campos, consistencias entre it
 
 ## Testes e explicacao para a sabatina
 
+A regressao em `tests/test_catalogo_tuss.cpp` cobre a matriz contextual dos indicadores: tabela 00 com tabela própria obrigatória; referências 90/98 com pacote obrigatório e indicador de tabela própria opcional; TUSS 19/20/22/63 com tabela própria incompatível e indicador de pacote permitido; e valores de indicador fora de `0`/`1`. A regra de obrigatoriedade dos indicadores é uma decisão local do extrato AMB_DET baseada no significado das referências; não se declara que a ANS publique essa matriz para todo contexto de mensagem TISS.
+
+
+
 `python tools/testar_tuss.py` verifica limites exatos e excedidos, campos vazios, zeros iniciais, casas decimais e formatos inadequados. Uma massa controlada confere o mesmo resumo nas entradas CSV e SQLite. A regressao anterior continua obrigatoria.
 
 Na pratica de COBOL, esta etapa corresponde a criticar tamanho, classe numerica e casas decimais antes de aceitar um registro. O Core preserva a representacao textual e verifica os digitos sem usar `double`; isso evita introduzir erro de ponto flutuante ou perda de zeros. Nao e uma implementacao de COMP-3. Os DAOs continuam responsaveis por acesso aos dados; o validador concentra as regras.

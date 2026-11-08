@@ -135,6 +135,72 @@ try
     exigir(validarSemHistorico(registro("A1", "00", "2025-01", "0", "1")).getEstado() == EstadoValidacao::VALIDO, "propria alfanumerica");
     exigir(validarSemHistorico(registro("A1", "90", "2025-01", "1")).getEstado() == EstadoValidacao::VALIDO, "pacote alfanumerico");
     exigir(validarSemHistorico(registro("A1", "98", "2025-01", "0")).getEstado() == EstadoValidacao::REJEITADO, "pacote incoerente");
+
+    // Matriz RF04: indicadores aceitos/rejeitados conforme a referencia.
+    auto avaliarIndicadores = [&](const std::string& tabela,
+                                  const std::string& pacote,
+                                  const std::string& propria) {
+        const bool referenciaPropriaOuPacote =
+            tabela == "00" || tabela == "90" || tabela == "98";
+        const std::string codigo = referenciaPropriaOuPacote ? "COD-1" : "10101012";
+        return validarSemHistorico(
+            registro(codigo, tabela, "2025-01", pacote, propria));
+    };
+    auto possuiMotivoDoIndicador = [&](const ResultadoValidacao& r,
+                                        const std::string& campo) {
+        for (const auto& motivo : r.getMotivos())
+            if (motivo.find(campo) != std::string::npos) return true;
+        return false;
+    };
+
+    // Tabela 00 exige IND_TABELA_PROPRIA=1; IND_PACOTE continua opcional.
+    for (const auto& pacote : {"", "0", "1"})
+        exigir(avaliarIndicadores("00", pacote, "1").getEstado() == EstadoValidacao::VALIDO,
+               "referencia 00 aceita tabela propria e indicador de pacote opcional");
+    for (const auto& propria : {"", "0"}) {
+        const auto r = avaliarIndicadores("00", "0", propria);
+        exigir(r.getEstado() == EstadoValidacao::REJEITADO &&
+               possuiMotivoDoIndicador(r, "CD_TABELA_REFERENCIA"),
+               "referencia 00 rejeita tabela propria ausente ou desligada");
+    }
+
+    // 90/98 exigem IND_PACOTE=1; o indicador de tabela própria não é inferido.
+    for (const auto& tabela : {"90", "98"}) {
+        for (const auto& propria : {"", "0", "1"})
+            exigir(avaliarIndicadores(tabela, "1", propria).getEstado() == EstadoValidacao::VALIDO,
+                   "referencia de pacote aceita indicador proprio opcional");
+        for (const auto& pacote : {"", "0"}) {
+            const auto r = avaliarIndicadores(tabela, pacote, "");
+            exigir(r.getEstado() == EstadoValidacao::REJEITADO &&
+                   possuiMotivoDoIndicador(r, "IND_PACOTE"),
+                   "referencia 90/98 rejeita IND_PACOTE ausente ou desligado");
+        }
+    }
+
+    // TUSS permite pacote como contexto de componente, mas contradiz tabela própria.
+    for (const auto& tabela : {"19", "20", "22", "63"}) {
+        for (const auto& pacote : {"", "0", "1"})
+            for (const auto& propria : {"", "0"}) {
+                const auto r = avaliarIndicadores(tabela, pacote, propria);
+                exigir(r.getEstado() != EstadoValidacao::REJEITADO &&
+                       r.getMotivos().empty(),
+                       "TUSS aceita combinacao sem tabela propria");
+            }
+        const auto propriaIncompativel = avaliarIndicadores(tabela, "0", "1");
+        exigir(propriaIncompativel.getEstado() == EstadoValidacao::REJEITADO &&
+               possuiMotivoDoIndicador(propriaIncompativel, "IND_TABELA_PROPRIA"),
+               "TUSS rejeita indicador de tabela propria");
+    }
+
+    for (const auto& campo : {"IND_PACOTE", "IND_TABELA_PROPRIA"}) {
+        const auto r = campo == std::string("IND_PACOTE")
+            ? avaliarIndicadores("22", "2", "0")
+            : avaliarIndicadores("22", "0", "2");
+        exigir(r.getEstado() == EstadoValidacao::REJEITADO &&
+               possuiMotivoDoIndicador(r, campo),
+               "indicador fora do dominio binario rejeitado");
+    }
+    std::cout << "OK: combinacoes IND_PACOTE e IND_TABELA_PROPRIA por referencia\n";
     exigir(validarSemHistorico(registro("ABC")).getEstado() == EstadoValidacao::REJEITADO, "procedimento nao numerico");
     exigir(validarSemHistorico(registro("10101012", "22", "2025-99")).getEstado() == EstadoValidacao::REJEITADO, "mes invalido");
     exigir(ValidadorRegistroTiss{}.validar(registro("10101012")).getEstado() == EstadoValidacao::VALIDO_COM_ALERTA, "compatibilidade sem catalogo explicita limite");
