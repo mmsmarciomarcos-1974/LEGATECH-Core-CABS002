@@ -56,3 +56,24 @@ Em 02/11/2026, o projeto foi executado pelo Code::Blocks, na configuração Rele
 Nos dois ambientes, a exportação foi confirmada em `../data/output/saida_codeblocks`. Esta evidência demonstra a compilação/execução e a resolução dos caminhos relativos com a massa controlada; não representa benchmark nem validação de processamento em escala.
 
 A origem e a normalização das TUSS 20 e 60 estão descritas em [CATALOGO_TUSS20.md](CATALOGO_TUSS20.md) e [CATALOGO_TUSS60.md](CATALOGO_TUSS60.md).
+
+## Referências da disciplina para consulta futura
+
+As obras abaixo constam no plano de ensino de CABS002 e ficam registradas como fontes possíveis de consulta e aprofundamento. Sua inclusão não significa que todas tenham sido consultadas ou fundamentem diretamente uma implementação específica do Core. Quando forem usadas em relatório, apresentação ou artigo, relacionar cada citação ao conceito efetivamente discutido.
+
+### Referências básicas
+
+- DEITEL, H. M.; DEITEL, P. J. *C++ Como Programar*. 3. ed. Bookman, 2001.
+- STROUSTRUP, B. *The C++ Programming Language*. 3rd ed. Addison-Wesley, 1997.
+- PRESSMAN, R. S. *Software Engineering: A Practitioner’s Approach*. 6th ed. McGraw-Hill Higher Education, 2005. ISBN 0-07-285318-2.
+- GAMMA, E.; HELM, R.; JOHNSON, R.; VLISSIDES, J. *Design Patterns: Elements of Reusable Object-Oriented Software*. Addison-Wesley Longman, 1995.
+- SIMÃO, J. M. *Fundamentos de Programação 2 — C++*. Disponível em: <http://www.pessoal.utfpr.edu.br/jeansimao/Fundamentos2/Fundamentos2.htm>.
+
+### Referências complementares
+
+- SEBESTA, R. W. *Conceitos de Linguagens de Programação*. 5. ed. Bookman, 2003.
+- HORSTMANN, C. *Conceitos de Computação com o Essencial de C++*. 3. ed. Bookman, 2003. ISBN 0-471-16437-2.
+- RUMBAUGH, J.; JACOBSON, I.; BOOCH, G. *The Unified Modeling Language Reference Manual*. 2nd ed. Addison-Wesley, 2005. ISBN 0-321-26797-4.
+- RUMBAUGH, J.; JACOBSON, I.; BOOCH, G. *The Unified Software Development Process*. 1st ed. Addison-Wesley, 2005. ISBN 0-201-57169-2.
+- LARMAN, C. *Applying UML and Patterns: An Introduction to Object-Oriented Analysis and Design*. Prentice Hall, 1998. ISBN 0-13-748880-7.
+- BEZERRA, E. *Princípios de Análise e Projeto de Sistemas com UML*. Editora Campus, 2003. ISBN 85-352-1032-6.
