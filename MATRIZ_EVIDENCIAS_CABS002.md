@@ -77,12 +77,16 @@ O perfil foi feito em Linux x86_64, Python 3.12.14, por leitura sequencial do CS
 
 | Tabela | Registros no recorte | Códigos distintos usados | Cruzamento com snapshot 202501 |
 |---|---:|---:|---|
-| 19 | 131 | 95 | Todos localizados; 128 registros dentro da vigência e 3 fora da vigência do mês. |
+| 19 | 131 | 95 | Todos localizados e dentro da vigência em janeiro/2025, após conferência da coluna oficial “Data de fim de vigência”. A indicação anterior de 3 ocorrências fora da vigência foi corrigida. |
 | 20 | 68.139 | 1.384 | 68.138 registros localizados e vigentes; 1 ocorrência de código ausente do snapshot, tratada pelo Core como alerta. |
-| 22 | 6.132.916 | 1.964 | 6.128.311 registros dentro da vigência; 1.262 fora da vigência; 3.343 ocorrências correspondem a 14 códigos ausentes do snapshot, tratadas pelo Core como alertas. |
+| 22 | 6.132.916 | 1.964 | 6.128.311 registros dentro da vigência; 1.262 ocorrências fora da vigência, em 2 códigos com início em 01/02/2025; 3.343 ocorrências correspondem a 14 códigos ausentes do snapshot, tratadas pelo Core como alertas. |
 | 63 | 1.235.717 | 31 | Todos os 31 códigos localizados e vigentes. |
 
 As referências proprietárias apareceram com estas frequências: `00` 225.072; `90` 67.414; `98` 125.934 registros. O código atual classifica a ausência no snapshot como alerta e a incompatibilidade comprovada de vigência como motivo de rejeição. As contagens acima são por ocorrência de cada condição; não foram somadas para produzir um total de registros rejeitados porque condições de campos diferentes podem coexistir no mesmo registro.
+
+### Revisão do cruzamento de vigência
+
+A recontagem usou o intervalo de competência inclusivo de 01/01/2025 a 31/01/2025 e comparou separadamente as colunas oficiais de início e fim de vigência. Na TUSS 19, os 95 códigos distintos usados (131 ocorrências) estão localizados e vigentes no mês; a contagem anterior de 128 dentro e 3 fora foi substituída por esse resultado, após conferência da coluna “Data de fim de vigência” nas planilhas oficiais. Na TUSS 22, as 1.262 ocorrências fora do período são de dois códigos: `41001141` (1.240 ocorrências) e `40314430` (22), ambos com início de vigência em 01/02/2025. Não houve ocorrência conhecida com vigência encerrada antes de janeiro/2025 no cruzamento TUSS 22. Pelo comportamento documentado no Core, esses códigos comprovadamente ainda não vigentes são rejeitados; códigos ausentes do snapshot permanecem alertas. As contagens são ocorrências de códigos e não identificam pessoas ou registros individuais.
 
 ### Interpretação e limites
 
