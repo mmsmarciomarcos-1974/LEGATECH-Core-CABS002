@@ -29,3 +29,11 @@ As variantes com campos inválidos e a massa controlada devem ser descritas como
 A licença do código próprio ainda será escolhida pelo autor. Este registro não concede novos direitos sobre o código, os dados ou os componentes de terceiros. Não foi criado LICENSE nem aplicada uma licença por inferência.
 
 A escolha deve considerar se o autor deseja permitir utilização e modificação por terceiros, inclusive comercial, e quais obrigações deseja estabelecer. A licença escolhida para o código próprio não altera os termos dos catálogos ou do SQLite.
+
+## Conferência adicional do histórico
+
+O CSV de origem TUSS 20 foi acrescentado no commit f99f3347e3595e674cb582452946d6a2c86cc3a8. O normalizador identifica uma exportação ANS TUSS 20 e valida 41.416 registros, mas o commit não documenta a URL exata ou a planilha que produziu essa exportação. A amostra positiva foi acrescentada no commit df03174a2bc1982149592129b6aecb2d6eac0746; isso identifica a entrada no Git, não a origem externa dos registros.
+
+Há divergência documental na TUSS 20: data/reference/manifest_tuss20_202501.json informa records=41424, enquanto CATALOGO_TUSS20.md e normalizar_tuss20.py informam 41.416 registros de dados. Não corrigir o manifesto antes de contar registros com um leitor CSV e conferir a semântica do campo records, o hash e a versão de referência. Contar linhas físicas pode produzir outro número devido a quebras internas de campos. A leitura integral do arquivo grande não foi obtida pelo conector nesta conferência; o conteúdo retornado foi vazio.
+
+O cabeçalho incluído LEGATECH_Core/include/sqlite3.h declara SQLITE_VERSION 3.53.4 e SQLITE_SOURCE_ID 2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc. Seu aviso inicial informa que o autor renuncia ao copyright. Essa identificação foi lida no arquivo versionado; não foi tratada como verificação da distribuição upstream completa ou do binário compilado.
