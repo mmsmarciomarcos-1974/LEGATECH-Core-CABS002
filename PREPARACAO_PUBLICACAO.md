@@ -41,3 +41,13 @@ Consultar a matriz de evidências para configurações e limites. A execução U
 4. Consolidar um roteiro reproduzível de compilação, teste e execução, incluindo as condições do ensaio integral.
 5. Preparar CITATION.cff e uma release com versão e commit definidos após o fechamento.
 6. Autorizar explicitamente a mudança de visibilidade. A preparação documental não altera a privacidade do repositório.
+
+## Verificação automatizada da preparação
+
+A execução GitHub Actions 43603140452, associada ao commit d6c548427962040a09c0eb7ed96e2426933f2ad9, concluiu com sucesso os jobs Regressão em ubuntu-latest e Regressão em windows-latest. Trata-se da suíte automatizada; não foi uma execução integral dos 7.855.323 registros.
+
+Link: https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002/actions/runs/43603140452
+
+A leitura alternativa do blob da TUSS 20 falhou por encerramento do transporte. O acesso por fetch_file também retornou conteúdo vazio. A divergência entre manifesto e documentação continua aberta. A regressão aprovada não resolve essa divergência: o harness consultado não contém uma conferência explícita da quantidade 41.416 versus o campo records desse manifesto.
+
+Para conferência local, usar o trecho somente de leitura em REPRODUCAO_ARTIGO.md. Não atualizar hashes ou contagens por suposição e não alterar resultados históricos. Esta atualização é documental.
