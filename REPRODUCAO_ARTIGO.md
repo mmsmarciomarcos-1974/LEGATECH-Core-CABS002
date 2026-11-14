@@ -40,7 +40,7 @@ Esta atualização acrescenta documentação e metadados de citação. Não repr
 
 ## Conferência da contagem TUSS 20
 
-O manifesto existente informa 41.424 e o normalizador/documentação informam 41.416 registros. Para conferir o arquivo local sem modificá-lo, executar na raiz:
+O manifesto anterior informava 41.424 e o normalizador/documentação informavam 41.416 registros. A contagem local confirmou 41.416 e a correção foi enviada à main no commit 0b53db1. O roteiro abaixo permanece útil para novas conferências. Para conferir o arquivo local sem modificá-lo, executar na raiz:
 
 ```python
 import csv
@@ -68,3 +68,7 @@ print("SHA-256 no manifesto:", manifest["catalog_sha256"])
 ```
 
 A comparação de hashes considera bytes locais; CRLF/LF pode gerar diferenças, conforme CATALOGO_TUSS20.md. Esse roteiro é de conferência e não foi executado nesta atualização por indisponibilidade dos bytes integrais no acesso utilizado. Não modifica catálogo nem manifesto.
+
+## Resolução da contagem TUSS 20
+
+Em 14/11/2026, o autor executou a leitura local com csv.reader, separador ponto e vírgula, codificação utf-8-sig e newline vazio. Após excluir o cabeçalho e ignorar linhas vazias, foram contados 41.416 registros. O diff mostrou somente records: 41424 → 41416 no manifesto, preservando o SHA-256 registrado. A correção foi enviada à main no commit 0b53db1. O catálogo não foi alterado nessa correção; o hash não foi recalculado por esse procedimento. A procedência exata da exportação e os termos de distribuição continuam como verificações independentes.
