@@ -37,3 +37,34 @@ CITATION.cff identifica o software e o autor. Ainda não contém versão, data d
 ## Conferência desta atualização
 
 Esta atualização acrescenta documentação e metadados de citação. Não representa nova execução dos testes ou da massa integral.
+
+## Conferência da contagem TUSS 20
+
+O manifesto existente informa 41.424 e o normalizador/documentação informam 41.416 registros. Para conferir o arquivo local sem modificá-lo, executar na raiz:
+
+```python
+import csv
+import hashlib
+import json
+from pathlib import Path
+
+p = Path("data/reference/tuss20_202501.csv")
+with p.open(encoding="utf-8-sig", newline="") as stream:
+    reader = csv.reader(stream, delimiter=";")
+    header = next(reader)
+    records = 0
+    codes = set()
+    for row in reader:
+        if len(row) != len(header):
+            raise ValueError(f"Estrutura divergente no registro {records + 1}")
+        records += 1
+        codes.add(row[2])
+manifest = json.loads(Path("data/reference/manifest_tuss20_202501.json").read_text(encoding="utf-8"))
+print("Registros de dados:", records)
+print("Códigos únicos:", len(codes))
+print("Quantidade no manifesto:", manifest["records"])
+print("SHA-256 bytes locais:", hashlib.sha256(p.read_bytes()).hexdigest())
+print("SHA-256 no manifesto:", manifest["catalog_sha256"])
+```
+
+A comparação de hashes considera bytes locais; CRLF/LF pode gerar diferenças, conforme CATALOGO_TUSS20.md. Esse roteiro é de conferência e não foi executado nesta atualização por indisponibilidade dos bytes integrais no acesso utilizado. Não modifica catálogo nem manifesto.
