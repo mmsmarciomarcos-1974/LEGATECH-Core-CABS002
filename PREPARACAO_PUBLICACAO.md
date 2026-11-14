@@ -48,6 +48,10 @@ A execução GitHub Actions 43603140452, associada ao commit d6c548427962040a09c
 
 Link: https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002/actions/runs/43603140452
 
-A leitura alternativa do blob da TUSS 20 falhou por encerramento do transporte. O acesso por fetch_file também retornou conteúdo vazio. A divergência entre manifesto e documentação continua aberta. A regressão aprovada não resolve essa divergência: o harness consultado não contém uma conferência explícita da quantidade 41.416 versus o campo records desse manifesto.
+A leitura alternativa do blob da TUSS 20 falhou por encerramento do transporte. O acesso por fetch_file também retornou conteúdo vazio. A divergência foi resolvida posteriormente pela contagem local e pelo commit 0b53db1 na main, conforme atualização abaixo. A regressão aprovada não resolve essa divergência: o harness consultado não contém uma conferência explícita da quantidade 41.416 versus o campo records desse manifesto.
 
 Para conferência local, usar o trecho somente de leitura em REPRODUCAO_ARTIGO.md. Não atualizar hashes ou contagens por suposição e não alterar resultados históricos. Esta atualização é documental.
+
+## Resolução da contagem TUSS 20
+
+Em 14/11/2026, o autor executou a leitura local com csv.reader, separador ponto e vírgula, codificação utf-8-sig e newline vazio. Após excluir o cabeçalho e ignorar linhas vazias, foram contados 41.416 registros. O diff mostrou somente records: 41424 → 41416 no manifesto, preservando o SHA-256 registrado. A correção foi enviada à main no commit 0b53db1. O catálogo não foi alterado nessa correção; o hash não foi recalculado por esse procedimento. A procedência exata da exportação e os termos de distribuição continuam como verificações independentes.
