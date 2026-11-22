@@ -46,15 +46,15 @@ void CsvSaidaValidacao::iniciar(const ContextoAuditoria& c)
     if (ativa) throw std::logic_error("Saida CSV ja iniciada");
     aceitos.exceptions(std::ios::badbit | std::ios::failbit);
     rejeitados.exceptions(std::ios::badbit | std::ios::failbit);
-    aceitos.open(pasta / "aceitos.csv", std::ios::binary);
-    rejeitados.open(pasta / "rejeitados.csv", std::ios::binary);
+    aceitos.open(caminhoArquivoExportado(pasta, "aceitos", ".csv"), std::ios::binary);
+    rejeitados.open(caminhoArquivoExportado(pasta, "rejeitados", ".csv"), std::ios::binary);
     ativa = true;
     const std::string cabecalho = "LINHA_ORIGEM;ESTADO;ID_EVENTO_ATENCAO_SAUDE;UF_PRESTADOR;DT_REALIZACAO;CD_PROCEDIMENTO;CD_TABELA_REFERENCIA;QT_ITEM_EVENTO_INFORMADO;VL_ITEM_EVENTO_INFORMADO;VL_ITEM_PAGO_FORNECEDOR;UNIDADE_MEDIDA;IND_PACOTE;IND_TABELA_PROPRIA;MOTIVOS_JSON;ALERTAS_JSON;LINHA_ORIGINAL\n";
     aceitos << cabecalho;
     rejeitados << cabecalho;
     std::ofstream contexto;
     contexto.exceptions(std::ios::badbit | std::ios::failbit);
-    contexto.open(pasta / "contexto.csv", std::ios::binary);
+    contexto.open(caminhoArquivoExportado(pasta, "contexto", ".csv"), std::ios::binary);
     contexto << "ARQUIVO;COMPETENCIA;CONTRATO;VERSAO_CATALOGO;TABELAS_CATALOGO;CABECALHO_ORIGEM\n"
              << linhaCsv({c.arquivo,c.competencia,c.contrato,c.versaoCatalogo,c.tabelaCatalogo,c.cabecalho}) << '\n';
     contexto.close();
