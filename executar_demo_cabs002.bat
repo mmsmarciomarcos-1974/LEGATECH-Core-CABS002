@@ -4,6 +4,7 @@ cd /d "%~dp0"
 
 set "MINGW_BIN=C:\Program Files\CodeBlocks\MinGW\bin"
 set "EXE=LEGATECH_Core\bin\Release\LEGATECH_Core.exe"
+set "VERSAO_CATALOGO_TUSS=202501"
 set "TUSS22=data\reference\tuss22_202501.csv"
 set "TUSS63=data\reference\tuss63_202501.csv"
 set "DB=data\sample\entrada_sqlite_demo.db"
@@ -54,6 +55,7 @@ set "LOG=logs\execucao_demo_%MODE%_%TS%.log"
   echo Data/hora: %DATE% %TIME%
   echo Modo: %MODE%
   echo Entrada: %INPUT%
+  echo Versao dos catalogos TUSS: %VERSAO_CATALOGO_TUSS%
   echo Catalogo TUSS 22: %TUSS22%
   echo Catalogo TUSS 63: %TUSS63%
   echo Saida: %OUT%
@@ -63,14 +65,14 @@ set "LOG=logs\execucao_demo_%MODE%_%TS%.log"
 ) > "%LOG%" 2>&1
 
 if /i "%MODE%"=="sqlite_amostra" goto run_sqlite
-"%EXE%" "%INPUT%" "%TUSS22%" "%TUSS63%" --export "%OUT%" >> "%LOG%" 2>&1
+"%EXE%" "%INPUT%" "%TUSS22%" "%TUSS63%" --catalogo-tuss "%VERSAO_CATALOGO_TUSS%" --export "%OUT%" >> "%LOG%" 2>&1
 set "RC=%ERRORLEVEL%"
 goto show_result
 
 :run_sqlite
 py preparar_sqlite_demo.py >> "%LOG%" 2>&1
 if errorlevel 1 goto preparation_error
-"%EXE%" --sqlite "%DB%" 202501 "%TUSS22%" "%TUSS63%" --export "%OUT%" >> "%LOG%" 2>&1
+"%EXE%" --sqlite "%DB%" 202501 "%TUSS22%" "%TUSS63%" --catalogo-tuss "%VERSAO_CATALOGO_TUSS%" --export "%OUT%" >> "%LOG%" 2>&1
 set "RC=%ERRORLEVEL%"
 
 :show_result
