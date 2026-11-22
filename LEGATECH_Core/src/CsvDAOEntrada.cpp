@@ -81,24 +81,24 @@ bool CsvDAOEntrada::validarCabecalho(
     const std::vector<std::string> colunasEncontradas =
         separarCampos(cabecalhoLimpo);
 
-    if (colunasEncontradas.size() !=
-        colunasEsperadas.size())
+    if (colunasEncontradas.size() == colunasEsperadas.size() &&
+        colunasEncontradas == colunasEsperadas)
     {
-        return false;
+        return true;
     }
 
-    for (std::size_t i = 0;
-         i < colunasEsperadas.size();
-         ++i)
+    // Mantem compatibilidade com o layout anterior de 11 colunas.
+    // No layout atual de 13, os campos pagos ficam antes da unidade.
+    if (colunasEsperadas.size() == 13 && colunasEncontradas.size() == 11)
     {
-        if (colunasEncontradas[i] !=
-            colunasEsperadas[i])
-        {
-            return false;
-        }
+        std::vector<std::string> colunasLegadas(
+            colunasEsperadas.begin(), colunasEsperadas.begin() + 8);
+        colunasLegadas.insert(
+            colunasLegadas.end(), colunasEsperadas.begin() + 10, colunasEsperadas.end());
+        return colunasEncontradas == colunasLegadas;
     }
 
-    return true;
+    return false;
 }
 
 
@@ -122,9 +122,11 @@ CsvDAOEntrada::normalizarCampos(
     // Layout fisico com 11 campos.
     // Ja possui UNIDADE_MEDIDA.
     //
-    if (camposEsperados.size() == 11 &&
-        campos.size() == 11)
+    if (camposEsperados.size() == 13 &&
+        (campos.size() == 13 || campos.size() == 11))
     {
+        // Preserva os 13 campos quando presentes; o layout anterior de 11
+        // continua utiliz√°vel e recebe campos pagos vazios no objeto.
         return campos;
     }
 
@@ -170,8 +172,23 @@ CsvDAOEntrada::normalizarCampos(
         return normalizados;
     }
 
-    // Estrutura fisica incompatÌvel com o contrato.
+    // Estrutura fisica incompat√≠vel com o contrato.
     return {};
+}
+
+static RegistroTissBruto criarRegistroTiss(const std::vector<std::string>& campos)
+{
+    if (campos.size() == 13)
+    {
+        return RegistroTissBruto(
+            campos[0], campos[1], campos[2], campos[3], campos[4],
+            campos[5], campos[6], campos[7], campos[8], campos[9],
+            campos[10], campos[11], campos[12]);
+    }
+
+    return RegistroTissBruto(
+        campos[0], campos[1], campos[2], campos[3], campos[4],
+        campos[5], campos[6], campos[7], campos[8], campos[9], campos[10]);
 }
 
 
@@ -324,19 +341,7 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
     // 4. CRIACAO DO OBJETO INTERNO
     // =================================================
 
-    RegistroTissBruto registro(
-        camposNormalizados[0],
-        camposNormalizados[1],
-        camposNormalizados[2],
-        camposNormalizados[3],
-        camposNormalizados[4],
-        camposNormalizados[5],
-        camposNormalizados[6],
-        camposNormalizados[7],
-        camposNormalizados[8],
-        camposNormalizados[9],
-        camposNormalizados[10]
-    );
+    RegistroTissBruto registro = criarRegistroTiss(camposNormalizados);
 
     std::cout
         << "Objeto RegistroTissBruto "
@@ -411,7 +416,7 @@ void CsvDAOEntrada::lerPrimeiroRegistro()
                 << '\n';
         }
 
-        // Um registro rejeitado tambÈm pode possuir
+        // Um registro rejeitado tamb√©m pode possuir
         // alertas acumulados.
         for (const std::string& alerta :
              resultado.getAlertas())
@@ -503,8 +508,7 @@ void CsvDAOEntrada::processarArquivoImpl(ProcessadorTiss* processador)
                 if (total % INTERVALO_PROGRESSO == 0) exibirProgresso();
                 continue;
             }
-            RegistroTissBruto registro(campos[0], campos[1], campos[2], campos[3], campos[4],
-                                      campos[5], campos[6], campos[7], campos[8], campos[9], campos[10]);
+            RegistroTissBruto registro = criarRegistroTiss(campos);
             const auto resultado = processador
                 ? processador->processar(registro, competenciaArquivo)
                 : validador.validar(registro, competenciaArquivo);
