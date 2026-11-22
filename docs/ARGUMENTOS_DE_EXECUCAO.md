@@ -40,5 +40,5 @@ versionados. As referências abaixo são as usadas no teste do projeto
 ```
 
 Execute uma linha por vez. Antes de executar, confirme que os catálogos TUSS
-referenciados existem em `data/reference/`. O programa cria uma pasta distinta,
-como `saida_codeblocks_20261122_233000`, para cada execução.
+referenciados existem em `data/reference/`. A pasta gerada terá o formato
+`saida_codeblocks_AAAAMMDD_HHMMSS`.
