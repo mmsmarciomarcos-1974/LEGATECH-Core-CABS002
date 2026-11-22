@@ -3,6 +3,7 @@
 RegistroTissBruto::RegistroTissBruto()
 {
 }
+
 RegistroTissBruto::RegistroTissBruto(
     const std::string& idEventoAtencaoSaude,
     const std::string& ufPrestador,
@@ -29,6 +30,38 @@ RegistroTissBruto::RegistroTissBruto(
       indTabelaPropria(indTabelaPropria)
 {
 }
+
+RegistroTissBruto::RegistroTissBruto(
+    const std::string& idEventoAtencaoSaude,
+    const std::string& ufPrestador,
+    const std::string& dtRealizacao,
+    const std::string& cdProcedimento,
+    const std::string& cdTabelaReferencia,
+    const std::string& qtItemEventoInformado,
+    const std::string& vlItemEventoInformado,
+    const std::string& vlItemPagoFornecedor,
+    const std::string& qtItemEventoPago,
+    const std::string& vlItemEventoPago,
+    const std::string& unidadeMedida,
+    const std::string& indPacote,
+    const std::string& indTabelaPropria
+)
+    : idEventoAtencaoSaude(idEventoAtencaoSaude),
+      ufPrestador(ufPrestador),
+      dtRealizacao(dtRealizacao),
+      cdProcedimento(cdProcedimento),
+      cdTabelaReferencia(cdTabelaReferencia),
+      qtItemEventoInformado(qtItemEventoInformado),
+      vlItemEventoInformado(vlItemEventoInformado),
+      vlItemPagoFornecedor(vlItemPagoFornecedor),
+      qtItemEventoPago(qtItemEventoPago),
+      vlItemEventoPago(vlItemEventoPago),
+      unidadeMedida(unidadeMedida),
+      indPacote(indPacote),
+      indTabelaPropria(indTabelaPropria)
+{
+}
+
 const std::string& RegistroTissBruto::getIdEventoAtencaoSaude() const
 {
     return idEventoAtencaoSaude;
@@ -69,6 +102,16 @@ const std::string& RegistroTissBruto::getVlItemPagoFornecedor() const
     return vlItemPagoFornecedor;
 }
 
+const std::string& RegistroTissBruto::getQtItemEventoPago() const
+{
+    return qtItemEventoPago;
+}
+
+const std::string& RegistroTissBruto::getVlItemEventoPago() const
+{
+    return vlItemEventoPago;
+}
+
 const std::string& RegistroTissBruto::getUnidadeMedida() const
 {
     return unidadeMedida;
@@ -83,4 +126,3 @@ const std::string& RegistroTissBruto::getIndTabelaPropria() const
 {
     return indTabelaPropria;
 }
-
