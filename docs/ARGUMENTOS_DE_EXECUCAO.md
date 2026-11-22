@@ -9,6 +9,11 @@ Os arquivos grandes ficam em `data/entrada_tiss/` no computador local; não são
 versionados. As referências abaixo são as usadas no teste do projeto
 (`tuss22_202501.csv` e `tuss63_202501.csv`).
 
+O contrato `AMB_DET` a partir de 2023 reconhece o layout de 13 colunas, incluindo
+`QT_ITEM_EVENTO_PAGO` e `VL_ITEM_EVENTO_PAGO`. O layout anterior de 11 colunas
+continua aceito; nesses registros, os dois campos pagos ficam vazios nas saídas.
+As regras atuais continuam validando os campos já implementados.
+
 ## PR — competência 202501
 
 ```text
