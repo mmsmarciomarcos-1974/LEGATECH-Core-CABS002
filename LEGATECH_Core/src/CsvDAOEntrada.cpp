@@ -119,8 +119,8 @@ CsvDAOEntrada::normalizarCampos(
     // A PARTIR DE 2023
     // =================================================
     //
-    // Layout fisico com 11 campos.
-    // Ja possui UNIDADE_MEDIDA.
+    // Layout atual com 13 campos, incluindo quantidade e valor pagos.
+    // O layout anterior de 11 campos continua aceito.
     //
     if (camposEsperados.size() == 13 &&
         (campos.size() == 13 || campos.size() == 11))
