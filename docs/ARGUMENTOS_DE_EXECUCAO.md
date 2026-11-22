@@ -3,7 +3,7 @@
 Use uma linha por execução. Os caminhos são relativos ao diretório de trabalho
 `LEGATECH_Core` configurado no Code::Blocks. Cada comando recebe o CSV de entrada,
 os catálogos TUSS 22 e 63, e uma pasta-base para exportação. O programa acrescenta
-automaticamente o timestamp à pasta de saída.
+automaticamente o timestamp à pasta e aos arquivos gerados.
 
 Os arquivos grandes ficam em `data/entrada_tiss/` no computador local; não são
 versionados. As referências abaixo são as usadas no teste do projeto
@@ -41,4 +41,6 @@ versionados. As referências abaixo são as usadas no teste do projeto
 
 Execute uma linha por vez. Antes de executar, confirme que os catálogos TUSS
 referenciados existem em `data/reference/`. A pasta gerada terá o formato
-`saida_codeblocks_AAAAMMDD_HHMMSS`.
+`saida_codeblocks_AAAAMMDD_HHMMSS`; dentro dela, os arquivos terão o mesmo timestamp:
+`aceitos_AAAAMMDD_HHMMSS.csv`, `rejeitados_AAAAMMDD_HHMMSS.csv`,
+`contexto_AAAAMMDD_HHMMSS.csv` e `resultados_AAAAMMDD_HHMMSS.db`.
