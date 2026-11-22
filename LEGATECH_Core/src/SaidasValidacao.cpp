@@ -23,7 +23,8 @@ void SaidasValidacao::iniciar(const ContextoAuditoria& contexto)
     try
     {
         csv = std::make_unique<CsvSaidaValidacao>(temporaria);
-        sqlite = std::make_unique<SQLiteAuditoriaValidacao>((temporaria / "resultados.db").string());
+        sqlite = std::make_unique<SQLiteAuditoriaValidacao>(
+            caminhoArquivoExportado(temporaria, "resultados", ".db").string());
         DAOSaidaValidacao* saida = csv.get(); saida->iniciar(contexto);
         saida = sqlite.get(); saida->iniciar(contexto);
     }
