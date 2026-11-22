@@ -14,6 +14,8 @@ private:
     std::string qtItemEventoInformado;
     std::string vlItemEventoInformado;
     std::string vlItemPagoFornecedor;
+    std::string qtItemEventoPago;
+    std::string vlItemEventoPago;
     std::string unidadeMedida;
     std::string indPacote;
     std::string indTabelaPropria;
@@ -21,6 +23,7 @@ private:
 public:
     RegistroTissBruto();
 
+    // Compatibilidade com os registros de 11 campos já utilizados no projeto.
     RegistroTissBruto(
         const std::string& idEventoAtencaoSaude,
         const std::string& ufPrestador,
@@ -35,6 +38,23 @@ public:
         const std::string& indTabelaPropria
     );
 
+    // Layout TISS AMB_DET com os campos de quantidade e valor pagos.
+    RegistroTissBruto(
+        const std::string& idEventoAtencaoSaude,
+        const std::string& ufPrestador,
+        const std::string& dtRealizacao,
+        const std::string& cdProcedimento,
+        const std::string& cdTabelaReferencia,
+        const std::string& qtItemEventoInformado,
+        const std::string& vlItemEventoInformado,
+        const std::string& vlItemPagoFornecedor,
+        const std::string& qtItemEventoPago,
+        const std::string& vlItemEventoPago,
+        const std::string& unidadeMedida,
+        const std::string& indPacote,
+        const std::string& indTabelaPropria
+    );
+
     const std::string& getIdEventoAtencaoSaude() const;
     const std::string& getUfPrestador() const;
     const std::string& getDtRealizacao() const;
@@ -43,6 +63,8 @@ public:
     const std::string& getQtItemEventoInformado() const;
     const std::string& getVlItemEventoInformado() const;
     const std::string& getVlItemPagoFornecedor() const;
+    const std::string& getQtItemEventoPago() const;
+    const std::string& getVlItemEventoPago() const;
     const std::string& getUnidadeMedida() const;
     const std::string& getIndPacote() const;
     const std::string& getIndTabelaPropria() const;
