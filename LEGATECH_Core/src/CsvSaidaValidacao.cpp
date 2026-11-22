@@ -67,7 +67,7 @@ void CsvSaidaValidacao::gravar(std::size_t linha, const std::string& original,
     const auto estado = resultado.getEstado();
     const char* nome = estado == EstadoValidacao::VALIDO ? "VALIDO" :
         estado == EstadoValidacao::VALIDO_COM_ALERTA ? "VALIDO_COM_ALERTA" : "REJEITADO";
-    auto campos = registro ? camposRegistro(*registro) : std::vector<std::string>(11);
+    auto campos = registro ? camposRegistro(*registro) : std::vector<std::string>(13);
     campos.insert(campos.begin(), {std::to_string(linha),nome});
     campos.push_back(mensagensJson(resultado.getMotivos()));
     campos.push_back(mensagensJson(resultado.getAlertas()));
