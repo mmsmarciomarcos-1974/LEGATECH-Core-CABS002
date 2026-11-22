@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#include <map>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
@@ -22,14 +23,51 @@
 
 namespace
 {
-// Periodo comum dos arquivos de referência TUSS usados pelo Core.
-constexpr char VERSAO_CATALOGO_TUSS[] = "202501";
+// Periodo padrao mantido para preservar as execucoes atuais.
+constexpr char VERSAO_CATALOGO_TUSS_PADRAO[] = "202501";
 
-std::string resolverCaminhoTuss20()
+bool competenciaValida(const std::string& valor)
+{
+    return valor.size() == 6 &&
+        std::all_of(valor.begin(), valor.end(), [](char c) { return c >= '0' && c <= '9'; }) &&
+        valor.substr(0, 4) != "0000" &&
+        valor.substr(4) >= "01" && valor.substr(4) <= "12";
+}
+
+std::string extrairVersaoCatalogoTuss(int& argc, char* argv[])
+{
+    std::string versao = VERSAO_CATALOGO_TUSS_PADRAO;
+    bool encontrouOpcao = false;
+    for (int i = 1; i < argc;)
+    {
+        if (std::string(argv[i]) != "--catalogo-tuss")
+        {
+            ++i;
+            continue;
+        }
+        if (encontrouOpcao)
+            throw std::runtime_error("--catalogo-tuss informado mais de uma vez");
+        if (i + 1 >= argc)
+            throw std::runtime_error("Informe AAAAMM apos --catalogo-tuss");
+
+        encontrouOpcao = true;
+        versao = argv[i + 1];
+        for (int j = i; j + 2 < argc; ++j)
+            argv[j] = argv[j + 2];
+        argc -= 2;
+        argv[argc] = nullptr;
+    }
+
+    if (!competenciaValida(versao))
+        throw std::runtime_error("Versao do catalogo TUSS deve usar AAAAMM valido");
+    return versao;
+}
+
+std::string resolverCaminhoTuss20(const std::string& versaoCatalogo)
 {
     const std::filesystem::path relativo =
         std::filesystem::path("data") / "reference" /
-        (std::string("tuss20_") + VERSAO_CATALOGO_TUSS + ".csv");
+        (std::string("tuss20_") + versaoCatalogo + ".csv");
     std::filesystem::path base = std::filesystem::current_path();
 
     while (true)
@@ -48,12 +86,12 @@ std::string resolverCaminhoTuss20()
         "Nao foi possivel localizar " + relativo.generic_string() + ".");
 }
 
-std::string resolverCaminhoTuss60()
+std::string resolverCaminhoTuss60(const std::string& versaoCatalogo)
 {
     const std::filesystem::path relativo =
         std::filesystem::path("data") / "reference" /
-        (std::string("tuss60_") + VERSAO_CATALOGO_TUSS) /
-        (std::string("tuss60_") + VERSAO_CATALOGO_TUSS + ".csv");
+        (std::string("tuss60_") + versaoCatalogo) /
+        (std::string("tuss60_") + versaoCatalogo + ".csv");
     std::filesystem::path base = std::filesystem::current_path();
 
     while (true)
@@ -72,41 +110,72 @@ std::string resolverCaminhoTuss60()
         "Nao foi possivel localizar " + relativo.generic_string() + ".");
 }
 
-std::vector<ReferenciaCatalogoTuss> resolverReferenciasTuss19()
+std::vector<ReferenciaCatalogoTuss> resolverReferenciasTuss19(
+    const std::string& versaoCatalogo)
 {
+    const std::string prefixo = "tuss19_" + versaoCatalogo + "_part";
     const std::filesystem::path relativo =
         std::filesystem::path("data") / "reference" /
-        (std::string("tuss19_") + VERSAO_CATALOGO_TUSS);
-    static const std::vector<std::size_t> registrosPorParte{
-        184598, 184598, 184598, 184598, 184598, 184598, 184594
+        ("tuss19_" + versaoCatalogo);
+    // Contagens conhecidas: validar apenas os arquivos TUSS 19 conferidos.
+    static const std::map<std::string, std::vector<std::size_t>> contagensConhecidas{
+        {"202501", {184598, 184598, 184598, 184598, 184598, 184598, 184594}}
     };
     std::filesystem::path base = std::filesystem::current_path();
 
     while (true)
     {
         const auto diretorio = base / relativo;
-        std::vector<ReferenciaCatalogoTuss> referencias;
-        bool encontrouParte = false;
-        bool conjuntoCompleto = true;
-        for (std::size_t i = 0; i < registrosPorParte.size(); ++i)
+        std::map<std::size_t, std::filesystem::path> partes;
+        if (std::filesystem::is_directory(diretorio))
         {
-            const auto caminho = diretorio /
-                (std::string("tuss19_") + VERSAO_CATALOGO_TUSS + "_part" +
-                 (i + 1 < 10 ? std::string("0") : std::string()) +
-                 std::to_string(i + 1) + ".csv");
-            const bool existe = std::filesystem::is_regular_file(caminho);
-            encontrouParte |= existe;
-            conjuntoCompleto &= existe;
-            if (existe)
-                referencias.push_back({caminho.string(), "19", registrosPorParte[i]});
+            for (const auto& item : std::filesystem::directory_iterator(diretorio))
+            {
+                if (!item.is_regular_file() || item.path().extension() != ".csv")
+                    continue;
+                const std::string nome = item.path().filename().string();
+                if (nome.rfind(prefixo, 0) != 0)
+                    continue;
+
+                const std::string numeroTexto =
+                    nome.substr(prefixo.size(), nome.size() - prefixo.size() - 4);
+                if (numeroTexto.empty() ||
+                    !std::all_of(numeroTexto.begin(), numeroTexto.end(),
+                                 [](char c) { return c >= '0' && c <= '9'; }))
+                    throw std::runtime_error("Nome de parte do catalogo TUSS 19 invalido: " + nome);
+
+                const std::size_t numero = static_cast<std::size_t>(std::stoull(numeroTexto));
+                if (numero == 0 || !partes.emplace(numero, item.path()).second)
+                    throw std::runtime_error("Numero de parte do catalogo TUSS 19 duplicado ou invalido");
+            }
         }
 
-        if (encontrouParte)
+        if (!partes.empty())
         {
-            if (!conjuntoCompleto)
+            const auto contagens = contagensConhecidas.find(versaoCatalogo);
+            if (contagens != contagensConhecidas.end() &&
+                partes.size() != contagens->second.size())
                 throw std::runtime_error(
-                    "Catalogo TUSS 19 incompleto: sao necessarias as sete partes " +
-                    std::string(VERSAO_CATALOGO_TUSS) + ".");
+                    "Catalogo TUSS 19 incompleto: quantidade de partes divergente em " +
+                    versaoCatalogo + ".");
+
+            const std::size_t totalPartes = partes.rbegin()->first;
+            if (partes.size() != totalPartes)
+                throw std::runtime_error(
+                    "Catalogo TUSS 19 incompleto: ha lacuna entre as partes em " +
+                    versaoCatalogo + ".");
+
+            std::vector<ReferenciaCatalogoTuss> referencias;
+            for (std::size_t i = 1; i <= totalPartes; ++i)
+            {
+                const auto parte = partes.find(i);
+                if (parte == partes.end())
+                    throw std::runtime_error("Parte do catalogo TUSS 19 ausente");
+                const std::size_t registrosEsperados =
+                    contagens == contagensConhecidas.end() ? 0 : contagens->second[i - 1];
+                referencias.push_back(
+                    {parte->second.string(), "19", registrosEsperados});
+            }
             return referencias;
         }
 
@@ -150,6 +219,7 @@ std::string criarCaminhoExportacaoComTimestamp(const std::string& caminhoBase)
 int main(int argc, char* argv[])
 try
 {
+    const std::string versaoCatalogoTuss = extrairVersaoCatalogoTuss(argc, argv);
     std::string pastaExportacao;
     if (argc >= 3 && std::string(argv[argc - 2]) == "--export")
     {
@@ -162,21 +232,19 @@ try
     if (argc > 1 && std::string(argv[1]) == "--sqlite")
     {
         if (argc != 5 && argc != 6)
-            throw std::runtime_error("Uso: LEGATECH_Core --sqlite banco.db AAAAMM catalogo22.csv [catalogo63.csv] [--export pasta_nova]");
+            throw std::runtime_error("Uso: LEGATECH_Core --sqlite banco.db AAAAMM catalogo22.csv [catalogo63.csv] [--catalogo-tuss AAAAMM] [--export pasta_nova]");
         const std::string competencia = argv[3];
-        if (competencia.size() != 6 ||
-            !std::all_of(competencia.begin(), competencia.end(), [](char c) { return c >= '0' && c <= '9'; }) ||
-            competencia.substr(0, 4) == "0000" || competencia.substr(4) < "01" || competencia.substr(4) > "12")
+        if (!competenciaValida(competencia))
             throw std::runtime_error("Competencia SQLite deve usar AAAAMM com ano e mes validos");
         std::vector<ReferenciaCatalogoTuss> refs{
             {argv[4], "22"},
-            {resolverCaminhoTuss20(), "20"},
-            {resolverCaminhoTuss60(), "60"}
+            {resolverCaminhoTuss20(versaoCatalogoTuss), "20"},
+            {resolverCaminhoTuss60(versaoCatalogoTuss), "60"}
         };
         if (argc == 6) refs.push_back({argv[5], "63"});
-        const auto referenciasTuss19 = resolverReferenciasTuss19();
+        const auto referenciasTuss19 = resolverReferenciasTuss19(versaoCatalogoTuss);
         refs.insert(refs.end(), referenciasTuss19.begin(), referenciasTuss19.end());
-        const CatalogoTuss catalogo(refs, VERSAO_CATALOGO_TUSS);
+        const CatalogoTuss catalogo(refs, versaoCatalogoTuss);
         std::cout << "LEGATECH Core - CABS002\nEntrada: SQLite / competencia " << competencia
                   << "\nCatalogo TUSS " << catalogo.getVersao() << " / tabela " << catalogo.getTabela()
                   << ": " << catalogo.tamanho() << " termos\n";
@@ -191,23 +259,23 @@ try
     }
     if (argc > 5)
     {
-        std::cerr << "Uso: LEGATECH_Core [arquivo.csv [catalogo22.csv [auditoria.db [catalogo63.csv]]]] ou arquivo.csv catalogo22.csv [catalogo63.csv] --export pasta_nova\n";
+        std::cerr << "Uso: LEGATECH_Core [arquivo.csv [catalogo22.csv [auditoria.db [catalogo63.csv]]]] ou arquivo.csv catalogo22.csv [catalogo63.csv] [--catalogo-tuss AAAAMM] --export pasta_nova\n";
         return 1;
     }
     // Carregado uma vez; falha de referencia interrompe antes de ler a massa.
     const std::string caminhoTuss22Padrao =
         (std::filesystem::path("..") / "data" / "reference" /
-         (std::string("tuss22_") + VERSAO_CATALOGO_TUSS + ".csv")).string();
+         (std::string("tuss22_") + versaoCatalogoTuss + ".csv")).string();
     std::vector<ReferenciaCatalogoTuss> referencias{
         {argc > 2 ? std::string(argv[2]) : caminhoTuss22Padrao, "22"},
-        {resolverCaminhoTuss20(), "20"},
-        {resolverCaminhoTuss60(), "60"}
+        {resolverCaminhoTuss20(versaoCatalogoTuss), "20"},
+        {resolverCaminhoTuss60(versaoCatalogoTuss), "60"}
     };
     if (!pastaExportacao.empty() && argc == 4) referencias.push_back({argv[3], "63"});
     else if (argc > 4) referencias.push_back({argv[4], "63"});
-    const auto referenciasTuss19 = resolverReferenciasTuss19();
+    const auto referenciasTuss19 = resolverReferenciasTuss19(versaoCatalogoTuss);
     referencias.insert(referencias.end(), referenciasTuss19.begin(), referenciasTuss19.end());
-    const CatalogoTuss catalogo(referencias, VERSAO_CATALOGO_TUSS);
+    const CatalogoTuss catalogo(referencias, versaoCatalogoTuss);
     std::cout << "Catalogo TUSS " << catalogo.getVersao()
               << " / tabela " << catalogo.getTabela()
               << ": " << catalogo.tamanho() << " termos\n";
