@@ -6,6 +6,10 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 #include "include/CatalogoTuss.h"
 #include "include/SQLiteAuditoriaValidacao.h"
 #include "include/SaidasValidacao.h"
@@ -104,6 +108,34 @@ std::vector<ReferenciaCatalogoTuss> resolverReferenciasTuss19()
 
     return {};
 }
+
+std::string criarCaminhoExportacaoComTimestamp(const std::string& caminhoBase)
+{
+    const auto agora = std::chrono::system_clock::now();
+    const std::time_t instante = std::chrono::system_clock::to_time_t(agora);
+    const std::tm* horarioLocal = std::localtime(&instante);
+    if (horarioLocal == nullptr)
+        throw std::runtime_error("Nao foi possivel obter data e hora locais.");
+
+    std::ostringstream timestamp;
+    timestamp << std::put_time(horarioLocal, "%Y%m%d_%H%M%S");
+
+    const std::filesystem::path base(caminhoBase);
+    std::filesystem::path candidato = base;
+    candidato += "_" + timestamp.str();
+
+    // Se houver outra execucao no mesmo segundo, acrescenta um contador.
+    unsigned int tentativa = 1;
+    while (std::filesystem::exists(candidato))
+    {
+        std::ostringstream sufixo;
+        sufixo << '_' << std::setw(2) << std::setfill('0') << tentativa++;
+        candidato = base;
+        candidato += "_" + timestamp.str() + sufixo.str();
+    }
+
+    return candidato.string();
+}
 }
 int main(int argc, char* argv[])
 try
@@ -113,6 +145,7 @@ try
     {
         pastaExportacao = argv[argc - 1];
         if (pastaExportacao.empty()) throw std::runtime_error("Pasta de exportacao vazia");
+        pastaExportacao = criarCaminhoExportacaoComTimestamp(pastaExportacao);
         argc -= 2;
     }
     // Entrada relacional normalizada: competencia explicita, sem depender do nome do banco.
