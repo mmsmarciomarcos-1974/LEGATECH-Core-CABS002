@@ -35,6 +35,8 @@ case "$opcao" in
     ;;
 esac
 
+args+=(--catalogo-tuss 202501)
+
 if [[ ! -x "$exe" ]]; then
   echo "Executavel Release nao encontrado: $exe"
   exit 1
