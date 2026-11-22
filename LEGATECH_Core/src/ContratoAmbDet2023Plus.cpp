@@ -26,6 +26,8 @@ ContratoAmbDet2023Plus::getCamposEsperados() const
         "QT_ITEM_EVENTO_INFORMADO",
         "VL_ITEM_EVENTO_INFORMADO",
         "VL_ITEM_PAGO_FORNECEDOR",
+        "QT_ITEM_EVENTO_PAGO",
+        "VL_ITEM_EVENTO_PAGO",
         "UNIDADE_MEDIDA",
         "IND_PACOTE",
         "IND_TABELA_PROPRIA"
