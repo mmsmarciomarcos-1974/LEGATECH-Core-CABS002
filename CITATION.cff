@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "Ao utilizar este software, cite o LEGATECH Core e identifique o commit efetivamente utilizado."
+type: software
+title: "LEGATECH Core"
+authors:
+  - family-names: "Marcos"
+    given-names: "Márcio"
+repository-code: "https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002"
+url: "https://github.com/mmsmarciomarcos-1974/LEGATECH-Core-CABS002"
+abstract: "Implementação em C++23 para leitura, validação, classificação e exportação de registros TISS, desenvolvida no contexto da disciplina CABS002 da UTFPR."
+keywords:
+  - "dados históricos"
+  - "rastreabilidade"
+  - "TISS"
+  - "C++"

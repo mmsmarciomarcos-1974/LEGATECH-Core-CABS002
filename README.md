@@ -91,3 +91,11 @@ As obras abaixo constam no plano de ensino de CABS002 e ficam registradas como f
 - RUMBAUGH, J.; JACOBSON, I.; BOOCH, G. *The Unified Software Development Process*. 1st ed. Addison-Wesley, 2005. ISBN 0-201-57169-2.
 - LARMAN, C. *Applying UML and Patterns: An Introduction to Object-Oriented Analysis and Design*. Prentice Hall, 1998. ISBN 0-13-748880-7.
 - BEZERRA, E. *Princípios de Análise e Projeto de Sistemas com UML*. Editora Campus, 2003. ISBN 85-352-1032-6.
+
+## Preparação para disponibilização junto ao artigo
+
+O escopo da revisão inicial, os limites da inspeção e as pendências de publicação estão em [PREPARACAO_PUBLICACAO.md](PREPARACAO_PUBLICACAO.md). Os resultados históricos devem ser citados com os commits das respectivas execuções, sem atribuí-los automaticamente à versão mais recente.
+
+- [Roteiro de reprodução e citação](REPRODUCAO_ARTIGO.md)
+- [Origem dos dados e componentes externos](ORIGEM_DADOS_E_DEPENDENCIAS.md)
+- [Metadados de citação do software](CITATION.cff)
